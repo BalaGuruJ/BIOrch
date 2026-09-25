@@ -1,0 +1,39 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Agent",
+  "type": "object",
+  "properties": {
+    "agent_id": {
+      "type": "string",
+      "description": "Unique identifier for the agent instance."
+    },
+    "name": {
+      "type": "string",
+      "description": "Human-readable name of the agent."
+    },
+    "role": {
+      "type": "string",
+      "description": "The specific responsibility or domain of the agent."
+    },
+    "capabilities": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "High-level descriptions of what this agent can do."
+    },
+    "allowed_tools": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "List of tool IDs this agent is permitted to request via the Tool Gateway."
+    },
+    "provider_info": {
+      "type": "object",
+      "description": "Optional metadata about the underlying model or provider powering this agent.",
+      "additionalProperties": true
+    }
+  },
+  "required": ["agent_id", "name", "role", "allowed_tools"]
+}

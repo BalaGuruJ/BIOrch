@@ -1,0 +1,38 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Workflow",
+  "type": "object",
+  "properties": {
+    "workflow_id": {
+      "type": "string",
+      "description": "Unique identifier for the workflow execution."
+    },
+    "tasks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "$ref": "task.schema.json"
+      },
+      "description": "List of tasks in this workflow."
+    },
+    "status": {
+      "type": "string",
+      "enum": ["pending", "running", "completed", "failed", "paused"],
+      "description": "Overall status of the workflow."
+    },
+    "current_state": {
+      "type": "object",
+      "description": "The current state of the workflow context.",
+      "additionalProperties": true
+    },
+    "termination_info": {
+      "type": "object",
+      "properties": {
+        "reason": { "type": "string" },
+        "message": { "type": "string" }
+      },
+      "description": "Information regarding how and why the workflow ended."
+    }
+  },
+  "required": ["workflow_id", "tasks", "status"]
+}
