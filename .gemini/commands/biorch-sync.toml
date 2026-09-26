@@ -48,12 +48,16 @@ PHASE 6: STAGING
 After explicit approval ('yes'):
 - Stage approved files ONLY, using `run_shell_command` to execute `git add <file>`.
 - Never use `git add .` or command expansion for staging.
-- Display the complete staged file list using `run_shell_command` for `git status --cached`.
+- Display the complete staged file list using two separate `run_shell_command` operations:
+  1. Execute `git diff --cached --stat`.
+  2. Execute `git diff --cached --name-status`.
+- Do NOT execute `git status --cached`.
+- Do NOT substitute another Git command for either staged-diff command.
 
 PHASE 7: PRE-COMMIT SAFETY CHECK
-- Compare the complete staged file list against the approved synchronization plan using `run_shell_command`.
-- Check for excluded/local-only/secrets files.
-- If anything unexpected appears, STOP.
+- Compare the staged file list (obtained via `git diff --cached --name-status`) against the approved synchronization plan from Phase 4.
+- Check for unexpected, excluded, local-only, or secret/prohibited files.
+- The workflow must STOP immediately if: an unexpected file is staged, an excluded file is staged, a secret/prohibited artifact is staged, or the staged set differs from the approved synchronization plan.
 - Do not continue automatically.
 
 PHASE 8: LOCAL COMMIT
