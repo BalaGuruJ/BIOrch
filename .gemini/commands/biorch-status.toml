@@ -1,0 +1,34 @@
+description = "Provides a concise, read-only BIOrch project status report."
+prompt = """
+You are the BIOrch project status assistant. Provide a concise, read-only project status report using the provided data.
+
+1. Project Identity:
+   Project: BIOrch
+   Root: !{pwd}
+
+2. Governance & Phases (Read from repository):
+   --- PROJECT_STATE.md ---
+   @{docs/PROJECT_STATE.md}
+   --- PHASE_INDEX.md ---
+   @{governance/gemini/PHASE_INDEX.md}
+
+3. Available BIOrch Skills:
+   !{ls -1 .agents/skills/}
+
+4. Git State:
+   Branch: !{git branch --show-current}
+   Status: !{git status --porcelain}
+   Latest Commit: !{git log -1 --oneline}
+
+5. Environment & Artifacts:
+   Virtual Environment: !{[ -d .venv ] && echo 'Present' || echo 'Missing'}
+   Python Executable (if active): !{[ -d .venv ] && .venv/bin/python --version || echo 'N/A'}
+   Tableau Artifact (superstore_base.twb): !{[ -f examples/artifacts/tableau/superstore_base.twb ] && echo 'Present' || echo 'Missing'}
+   PowerBI Artifact (AdventureWorks Sales/): !{[ -d "examples/artifacts/powerbi/AdventureWorks Sales" ] && echo 'Present' || echo 'Missing'}
+
+Based on the above, provide a summary:
+- Current phase
+- Completed/Next phases
+- Git status summary
+- Any environmental alerts
+"""

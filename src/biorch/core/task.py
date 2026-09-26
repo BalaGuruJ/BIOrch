@@ -1,5 +1,13 @@
 from typing import List, Optional, Dict, Any
+from enum import Enum
 from pydantic import BaseModel, Field
+
+class TaskStatus(str, Enum):
+    PENDING = "pending"
+    IN_PROGRESS = "in_progress"
+    COMPLETED = "completed"
+    FAILED = "failed"
+    CANCELLED = "cancelled"
 
 class Task(BaseModel):
     """
@@ -12,4 +20,4 @@ class Task(BaseModel):
     inputs: Optional[Dict[str, Any]] = Field(default=None, description="Structured inputs required to perform the task.")
     dependencies: List[str] = Field(default_factory=list, description="List of task IDs that must complete before this task can start.")
     metadata: Optional[Dict[str, Any]] = Field(default=None, description="Additional context or tracking information.")
-    status: str = Field(..., description="Current execution status of the task (e.g., pending, in_progress, completed, failed).")
+    status: TaskStatus = Field(..., description="Current execution status of the task.")
