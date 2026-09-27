@@ -12,15 +12,19 @@ You are the BIOrch project status assistant. Provide a concise, read-only projec
    --- PHASE_INDEX.md ---
    @{governance/gemini/PHASE_INDEX.md}
 
-3. Available BIOrch Skills:
+3. Detected Drift (Reconciliation):
+   - Compare @{governance/gemini/PHASE_INDEX.md} (Authoritative) with @{docs/PROJECT_STATE.md} and @{docs/ROADMAP.md}.
+   - Report any inconsistencies found.
+
+4. Available BIOrch Skills:
    !{ls -1 .agents/skills/}
 
-4. Git State:
+5. Git State (Read-only):
    Branch: !{git branch --show-current}
    Status: !{git status --porcelain}
    Latest Commit: !{git log -1 --oneline}
 
-5. Environment & Artifacts:
+6. Environment & Artifacts:
    Virtual Environment: !{[ -d .venv ] && echo 'Present' || echo 'Missing'}
    Python Executable (if active): !{[ -d .venv ] && .venv/bin/python --version || echo 'N/A'}
    Tableau Artifact (superstore_base.twb): !{[ -f examples/artifacts/tableau/superstore_base.twb ] && echo 'Present' || echo 'Missing'}
@@ -29,6 +33,7 @@ You are the BIOrch project status assistant. Provide a concise, read-only projec
 Based on the above, provide a summary:
 - Current phase
 - Completed/Next phases
+- Detected documentation drift (if any)
 - Git status summary
 - Any environmental alerts
 """

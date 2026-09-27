@@ -34,7 +34,7 @@ Analysis-ready output
 
 - [COMPLETED] Phase 0 — Foundation: Project repository, Python environment, initial directory structure.
 - [COMPLETED] Phase 1 — Contracts: Establishing the JSON and Python structural contracts (Agent, Task, Result, Tool, Workflow) in a framework-neutral manner. No execution logic.
-- [PLANNED] Phase 2 — Tool Gateway: Implementation of the security boundary, tool validation, and execution policies.
+- [COMPLETED] Phase 2 — Tool Gateway: Implementation of the security boundary, tool validation, and execution policies.
 - [PLANNED] Phase 3 — First deterministic Agent: Implementation of the first specialized agent (e.g., RepositoryAgent) proving the Agent → Tool Gateway → Result flow.
 - [PLANNED] Phase 4 — Deterministic Orchestrator: Hardcoded orchestration flows (e.g., inspect → analyze → implement → validate → review).
 - [PLANNED] Phase 5 — Multiple Agents: Introducing domain agents (TableauAgent, PowerBIAgent) into the orchestrator.

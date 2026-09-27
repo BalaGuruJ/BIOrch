@@ -1,71 +1,51 @@
 # BIOrch Status Synchronization Governance
 
-## Purpose
+## Authoritative State
+`governance/gemini/PHASE_INDEX.md` is the authoritative source for project phase status.
 
-Human-controlled synchronization of:
-
-```text
-LOCAL BIOrch STATE
-+
-GOVERNANCE STATE
-↓
-GIT COMMIT
-↓
-GITHUB
-```
-
-## Human Trigger
-
-`Update BIOrch project status`
-
-## Controlled Outputs
-
-### Local
+## Derived Projections
+The following are derived documentation projections and must be synchronized with the authoritative state:
 * `docs/PROJECT_STATE.md`
-* `governance/gemini/PHASE_INDEX.md`
+* `docs/ROADMAP.md`
+* `README.md`
 
-### Repository
-* Git commit
-* GitHub push
+## Command Responsibilities
+
+### /biorch-status (Read-Only)
+- Reports current authoritative phase, completed phases, and next phase.
+- Detects and reports documentation drift between authoritative state and derived projections.
+- Performs NO file modifications.
+- Performs NO Git mutations.
+
+### /biorch-next (Read-Only)
+- Identifies the next permitted governed action (implementation, review, closure, or transition).
+- Identifies if human approval is required for the next action.
+- Performs NO file modifications.
+
+### /biorch-sync (Reconciliation)
+- Detects inconsistencies in derived documentation (`PROJECT_STATE.md`, `ROADMAP.md`, `README.md`).
+- Proposes a synchronization plan for human review.
+- Requires explicit human approval before modifying derived projections.
+- Performs NO Git mutations (commit, push).
+
+## Immutable Evidence
+The following historical artifacts MUST NOT be modified:
+* `governance/gemini/**/TASK.md`
+* `governance/gemini/**/RESPONSE.md`
+* `governance/gemini/**/REVIEW.md`
+* `governance/gemini/**/PHASE_CLOSURE.md`
+* `contracts/**/*.md`
 
 ## Human Control Boundary
-
-> Updating local status and pushing to GitHub are separate actions.
-
-The system may prepare the update automatically, but Git commit/push requires explicit human approval.
+- Documentation synchronization and Git synchronization are strictly separate.
+- Documentation updates require explicit human approval.
+- Git operations (commit, push) require explicit human approval.
 
 ## Safety Rules
-
-* no automatic push
-* no implementation changes
-* no phase completion without evidence
-* no invented test results
-* no invented Gemini responses
-* no modification of historical RESPONSE.md records
-* no rewriting of prior REVIEW.md decisions
-* no destructive Git operations
-* no force push
-* no branch deletion
-* no reset/rebase as part of status synchronization
-
-## Architectural Principle
-
-> BIOrch status synchronization is a governance operation, not an implementation operation.
-
-> The status workflow may read project information and write governance documentation, but it must not silently modify application code.
-
-## Future Implementation
-
-`IMPLEMENTATION PENDING — Gemini CLI`
-
-The following are intentionally deferred to Gemini CLI:
-* actual skill execution
-* shell command execution
-* Git integration
-* GitHub synchronization
-* commit creation
-* push handling
-* error handling
-* dirty working-tree handling
-* branch handling
-* remote validation
+- No automatic push.
+- No automatic commit.
+- No implementation changes in application source code.
+- No modification of historical evidence artifacts.
+- No phase closure without governed lifecycle evidence (Implementation -> Review -> Closure).
+- No modification of contracts.
+- Synchronization only occurs *after* authoritative state update and human approval.

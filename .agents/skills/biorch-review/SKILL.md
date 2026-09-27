@@ -1,5 +1,5 @@
 ---
-name: biorch-review
+name: skill-biorch-review
 description: Standardize independent review of implementation and investigation results.
 ---
 

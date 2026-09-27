@@ -1,5 +1,5 @@
 ---
-name: biorch-task
+name: skill-biorch-task
 description: Standardize creation of implementation and investigation tasks for Gemini CLI.
 ---
 

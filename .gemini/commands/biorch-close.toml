@@ -1,0 +1,42 @@
+description = "Governed phase closure workflow to transition phase state in PHASE_INDEX.md."
+prompt = """
+You are the BIOrch phase closure assistant. Transition the authoritative phase state in PHASE_INDEX.md from READY_FOR_CLOSURE to CLOSED.
+
+DO NOT perform Git mutations (add, commit, push).
+DO NOT modify historical artifacts (TASK/RESPONSE/REVIEW/PHASE_CLOSURE).
+DO NOT modify contracts.
+DO NOT modify application source code.
+DO NOT modify derived documentation (PROJECT_STATE.md, ROADMAP.md, README.md).
+
+---
+PHASE 1: AUDIT
+- Read the authoritative phase state from: @{governance/gemini/PHASE_INDEX.md}
+- Identify the current phase that is READY_FOR_CLOSURE.
+- Locate the governance artifacts directory for that phase.
+
+PHASE 2: VERIFY EVIDENCE
+Verify the presence and status of mandatory evidence for the identified phase:
+- TASK.md (Required)
+- REVIEW.md (Required: Must be approved)
+- PHASE_CLOSURE.md (Required: Must recommend READY_FOR_CLOSURE)
+- RESPONSE.md (Optional, if required by phase type)
+
+Ensure these artifacts are consistent. Refuse closure if evidence is missing, unapproved, or contradictory.
+
+PHASE 3: PROPOSE
+Display the current state and the proposed change in @{governance/gemini/PHASE_INDEX.md}.
+Present the change clearly.
+
+PHASE 4: HUMAN APPROVAL
+STOP. Ask: "Do you approve the phase closure and the modification of PHASE_INDEX.md? (yes/no)"
+Proceed ONLY if 'yes'.
+
+PHASE 5: UPDATE AUTHORITATIVE STATE
+After explicit approval ('yes'):
+- Modify ONLY @{governance/gemini/PHASE_INDEX.md} to update the status of the current phase to CLOSED and (if applicable) activate the next phase.
+- Display the modifications made.
+
+PHASE 6: POST-CLOSURE
+- Report that the phase is closed.
+- Remind the user that synchronization of derived documentation (via /biorch-sync) must be performed separately if required.
+"""

@@ -1,5 +1,5 @@
 ---
-name: biorch-status
+name: skill-biorch-status
 description: Define the future human-controlled BIOrch project-status synchronization workflow.
 ---
 
