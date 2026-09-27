@@ -2,7 +2,9 @@
 
 Agent orchestration platform for BI metadata analysis and repository engineering.
 
-Status: Phase 02 (Tool Gateway) CLOSED — Phase 03 (One Deterministic Agent) PLANNED.
+- **LAST_COMPLETED:** Phase 02 (Tool Gateway).
+- **ACTIVE:** NONE.
+- **NEXT_PLANNED:** Phase 03 (One Deterministic Agent).
 
 Planned integrations:
 - TabUI — Tableau metadata extraction/analysis

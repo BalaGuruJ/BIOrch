@@ -11,7 +11,7 @@ DO NOT modify derived documentation (PROJECT_STATE.md, ROADMAP.md, README.md).
 ---
 PHASE 1: AUDIT
 - Read the authoritative phase state from: @{governance/gemini/PHASE_INDEX.md}
-- Identify the current phase that is READY_FOR_CLOSURE.
+- Identify the ACTIVE phase that is READY_FOR_CLOSURE.
 - Locate the governance artifacts directory for that phase.
 
 PHASE 2: VERIFY EVIDENCE
@@ -33,7 +33,7 @@ Proceed ONLY if 'yes'.
 
 PHASE 5: UPDATE AUTHORITATIVE STATE
 After explicit approval ('yes'):
-- Modify ONLY @{governance/gemini/PHASE_INDEX.md} to update the status of the current phase to CLOSED and (if applicable) activate the next phase.
+- Modify ONLY @{governance/gemini/PHASE_INDEX.md} to update the status of the READY_FOR_CLOSURE phase to CLOSED and (if applicable) activate the next phase.
 - Display the modifications made.
 
 PHASE 6: POST-CLOSURE

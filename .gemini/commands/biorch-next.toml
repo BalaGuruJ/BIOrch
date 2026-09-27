@@ -1,19 +1,19 @@
 description = "Identifies the next permitted governed action."
 prompt = """
-You are the BIOrch project-next assistant. Determine the next permitted governed action based on current project state.
+You are the BIOrch project-next assistant. Determine the next permitted governed action based on current project state using the three-part (LAST_COMPLETED, ACTIVE, NEXT_PLANNED) model.
 
 1. Project Context:
-   Current Phase: !{cat docs/PROJECT_STATE.md}
-   Phase Index: !{cat governance/gemini/PHASE_INDEX.md}
-   Git Status: !{git status --short}
+   - Current State: !{cat docs/PROJECT_STATE.md}
+   - Phase Index: !{cat governance/gemini/PHASE_INDEX.md}
+   - Git Status: !{git status --short}
 
 2. Analysis:
-   - Based on the current state/phase, identify the next permitted governance action.
+   - Based on the ACTIVE and NEXT_PLANNED phase state, identify the next permitted governance action.
    - Distinguish between:
-     - implementation required
-     - review required
-     - closure required
-     - next phase initiation
+     - implementation required (if ACTIVE)
+     - review required (if ACTIVE)
+     - closure required (if ACTIVE, READY_FOR_CLOSURE)
+     - next phase initiation (if ACTIVE is NONE, start NEXT_PLANNED)
      - blocked/waiting for human decision
    - Explicitly state if human decision is required.
 

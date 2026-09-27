@@ -58,3 +58,5 @@ must NOT be interpreted as runtime BI orchestration agents.
 
 ## Change History
 - 2026-09-27: Initial roadmap canonicalization and structuring.
+
+<!-- TEST DRIFT -->

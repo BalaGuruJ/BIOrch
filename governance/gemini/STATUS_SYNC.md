@@ -3,8 +3,16 @@
 ## Authoritative State
 `governance/gemini/PHASE_INDEX.md` is the authoritative source for project phase status.
 
-## Derived Projections
-The following are derived documentation projections and must be synchronized with the authoritative state:
+## Three-Part State Model
+To improve lifecycle visibility, the project uses a three-part state model derived from the authoritative status in `PHASE_INDEX.md`:
+
+### Definitions
+*   **LAST_COMPLETED**: The most recent phase with status `CLOSED`.
+*   **ACTIVE**: The phase with status `IN_PROGRESS`. If none, `NONE`.
+*   **NEXT_PLANNED**: The first chronological phase after `LAST_COMPLETED`/`ACTIVE` with status `PLANNED`.
+
+### Derived Projections
+The following are derived documentation projections and must be synchronized with the authoritative state using the `/biorch-sync` command:
 * `docs/PROJECT_STATE.md`
 * `docs/ROADMAP.md`
 * `README.md`
@@ -12,18 +20,18 @@ The following are derived documentation projections and must be synchronized wit
 ## Command Responsibilities
 
 ### /biorch-status (Read-Only)
-- Reports current authoritative phase, completed phases, and next phase.
+- Reports current authoritative phase (as `LAST_COMPLETED`, `ACTIVE`, `NEXT_PLANNED`).
 - Detects and reports documentation drift between authoritative state and derived projections.
 - Performs NO file modifications.
 - Performs NO Git mutations.
 
 ### /biorch-next (Read-Only)
-- Identifies the next permitted governed action (implementation, review, closure, or transition).
+- Identifies the next permitted governed action (implementation, review, closure, or transition) based on `ACTIVE` or `NEXT_PLANNED` state.
 - Identifies if human approval is required for the next action.
 - Performs NO file modifications.
 
 ### /biorch-sync (Reconciliation)
-- Detects inconsistencies in derived documentation (`PROJECT_STATE.md`, `ROADMAP.md`, `README.md`).
+- Detects inconsistencies in derived documentation (`PROJECT_STATE.md`, `ROADMAP.md`, `README.md`) based on the three-part state model.
 - Proposes a synchronization plan for human review.
 - Requires explicit human approval before modifying derived projections.
 - Performs NO Git mutations (commit, push).

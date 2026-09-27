@@ -5,31 +5,31 @@
 This document defines the standard sequence for using the BIOrch Gemini CLI
 commands during development.
 
-BIOrch development follows a governed lifecycle:
+BIOrch development follows a governed lifecycle, tracked via the authoritative
+governance index: `governance/gemini/PHASE_INDEX.md`.
 
-Contract
-    ↓
-Task
-    ↓
-Task Review
-    ↓
-Implementation
-    ↓
-Implementation Review
-    ↓
-Phase Closure
-    ↓
-Human Approval
-    ↓
-Next Phase
+## 2. Phase State Model
 
-The Gemini CLI commands provide controlled assistance at each stage, while
-human approval remains the authority for important phase transitions and
+BIOrch development is organized into phases, each with a lifecycle state:
+
+- **PLANNED**
+- **IN_PROGRESS**
+- **READY_FOR_CLOSURE**
+- **CLOSED**
+
+At any given time, the project state is summarized by three phase categories:
+
+1. **LAST_COMPLETED**: The most recent phase that has transitioned to **CLOSED**.
+2. **ACTIVE**: The phase currently in **IN_PROGRESS** or **READY_FOR_CLOSURE**.
+3. **NEXT_PLANNED**: The phase currently in **PLANNED**.
+
+The Gemini CLI commands provide controlled assistance based on this model,
+while human approval remains the authority for important phase transitions and
 contract changes.
 
 ---
 
-# 2. Core Principle
+# 3. Core Principle
 
 A BIOrch phase should normally follow this lifecycle:
 
@@ -87,7 +87,7 @@ Implementation code must not silently redefine the contract.
 ### Purpose
 
 Create a governed implementation or investigation task from the
-current phase requirements and canonical contract.
+ACTIVE phase requirements and canonical contract.
 
 ### Typical use
 
@@ -241,7 +241,7 @@ Example:
 
 It should inspect:
 
-- current phase
+- phase state (LAST_COMPLETED, ACTIVE, NEXT_PLANNED)
 - phase status
 - contracts
 - tasks

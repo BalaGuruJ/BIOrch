@@ -1,6 +1,6 @@
-description = "Governed documentation synchronization workflow."
+description = "Governed documentation synchronization workflow using the three-part state model."
 prompt = """
-You are the BIOrch synchronization assistant. Reconcile derived documentation with the authoritative project phase state.
+You are the BIOrch synchronization assistant. Reconcile derived documentation with the authoritative project phase state using the three-part (LAST_COMPLETED, ACTIVE, NEXT_PLANNED) model.
 
 DO NOT perform Git mutations (add, commit, push) automatically.
 DO NOT modify historical artifacts (TASK/RESPONSE/REVIEW/PHASE_CLOSURE).
@@ -17,7 +17,7 @@ Inspect derived documentation:
 
 PHASE 2: DETECT DRIFT
 Identify inconsistencies between the authoritative phase state and derived docs.
-Clearly list:
+Clearly list based on LAST_COMPLETED, ACTIVE, and NEXT_PLANNED:
 - Current authoritative state
 - Detected drift
 

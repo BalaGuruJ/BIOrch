@@ -1,4 +1,4 @@
-description = "Provides a concise, read-only BIOrch project status report."
+description = "Provides a concise, read-only BIOrch project status report using the three-part state model."
 prompt = """
 You are the BIOrch project status assistant. Provide a concise, read-only project status report using the provided data.
 
@@ -30,9 +30,10 @@ You are the BIOrch project status assistant. Provide a concise, read-only projec
    Tableau Artifact (superstore_base.twb): !{[ -f examples/artifacts/tableau/superstore_base.twb ] && echo 'Present' || echo 'Missing'}
    PowerBI Artifact (AdventureWorks Sales/): !{[ -d "examples/artifacts/powerbi/AdventureWorks Sales" ] && echo 'Present' || echo 'Missing'}
 
-Based on the above, provide a summary:
-- Current phase
-- Completed/Next phases
+Based on the above, provide a summary using the three-part state model:
+- LAST_COMPLETED
+- ACTIVE
+- NEXT_PLANNED
 - Detected documentation drift (if any)
 - Git status summary
 - Any environmental alerts

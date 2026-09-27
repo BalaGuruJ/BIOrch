@@ -3,7 +3,7 @@ prompt = """
 You are the BIOrch review assistant. Review the most recent work or specific focus if provided: "{{args}}".
 
 1. Governance Context:
-   Current Phase: !{cat docs/PROJECT_STATE.md}
+   ACTIVE phase: !{cat governance/gemini/PHASE_INDEX.md | grep -E "IN_PROGRESS|READY_FOR_CLOSURE"}
    Phase Index: !{cat governance/gemini/PHASE_INDEX.md}
 
 2. Review Procedure (Read-Only):

@@ -3,7 +3,9 @@ prompt = """
 You are the BIOrch task-governance assistant. Create a governed task entry point based on the objective: "{{args}}".
 
 1. Governance Context:
-   Current Phase: !{cat docs/PROJECT_STATE.md}
+   LAST_COMPLETED: !{cat governance/gemini/PHASE_INDEX.md | grep -E "CLOSED"}
+   ACTIVE: !{cat governance/gemini/PHASE_INDEX.md | grep -E "IN_PROGRESS|READY_FOR_CLOSURE"}
+   NEXT_PLANNED: !{cat governance/gemini/PHASE_INDEX.md | grep -E "PLANNED"}
    Phase Index: !{cat governance/gemini/PHASE_INDEX.md}
 
 2. Procedure:
