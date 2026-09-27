@@ -4,7 +4,7 @@
 | ----- | -------------------------- | ------------------------------- | ------------------- | ------- | ----------- | --------- |
 | 00    | Project Foundation         | Establish project baseline      | FOUNDATION COMPLETE | —       | —           | —         |
 | 01    | Architecture Contract      | Establish structural contracts  | FOUNDATION COMPLETE | —       | —           | —         |
-| 02    | Tool Gateway               | Controlled tool access          | PLANNED             | TASK.md | RESPONSE.md | REVIEW.md |
+| 02    | Tool Gateway               | Controlled tool access          | CLOSED              | TASK.md | RESPONSE.md | REVIEW.md |
 | 03    | One Deterministic Agent    | First executable agent          | PLANNED             | TASK.md | RESPONSE.md | REVIEW.md |
 | 04    | Deterministic Orchestrator | Coordinate known workflows      | PLANNED             | TASK.md | RESPONSE.md | REVIEW.md |
 | 05    | Multiple Agents            | Introduce specialized agents    | PLANNED             | TASK.md | RESPONSE.md | REVIEW.md |
