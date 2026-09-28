@@ -675,3 +675,98 @@ This is the reference lifecycle for future implementation phases.
 | `/biorch-roadmap`    | **Where is the project going?**    | Manage roadmap                   |
 | `/biorch-governance` | **What are our governance rules?** | Governance inspection/operations |
 | `/biorch-sync`       | **Synchronize things**             | Supporting synchronization       |
+
+
+Mental model:
+
+                 ┌──────────────────────────┐
+                 │  PHASE CONTRACT / DESIGN │
+                 │                          │
+                 │ Define what this phase   │
+                 │ is supposed to achieve   │
+                 └────────────┬─────────────┘
+                              │
+                              ▼
+                 ┌──────────────────────────┐
+                 │  /biorch-task            │
+                 │                          │
+                 │ Start phase              │
+                 │ PLANNED → IN_PROGRESS    │
+                 │                          │
+                 │ Gemini performs the      │
+                 │ actual implementation    │
+                 └────────────┬─────────────┘
+                              │
+                              ▼
+                 ┌──────────────────────────┐
+                 │  /biorch-review           │
+                 │                          │
+                 │ Validate implementation  │
+                 │ against contract + task  │
+                 │                          │
+                 │ IN_PROGRESS              │
+                 │ → READY_FOR_CLOSURE      │
+                 └────────────┬─────────────┘
+                              │
+                         Human approval
+                              │
+                              ▼
+                 ┌──────────────────────────┐
+                 │  /biorch-close            │
+                 │                          │
+                 │ Final closure audit       │
+                 │ Create closure evidence   │
+                 │                          │
+                 │ READY_FOR_CLOSURE         │
+                 │ → CLOSED                 │
+                 └────────────┬─────────────┘
+                              │
+                              ▼
+              ╔══════════════════════════════════╗
+              ║       POST-PHASE CHECKPOINT      ║
+              ╚══════════════════════════════════╝
+                              │
+                              ▼
+                 ┌──────────────────────────┐
+                 │  /biorch-sync             │
+                 │                          │
+                 │ Bring derived docs/state  │
+                 │ into synchronization      │
+                 └────────────┬─────────────┘
+                              │
+                              ▼
+                 ┌──────────────────────────┐
+                 │  /biorch-status           │
+                 │                          │
+                 │ "Is everything actually  │
+                 │ consistent?"             │
+                 └────────────┬─────────────┘
+                              │
+                              ▼
+                 ┌──────────────────────────┐
+                 │  /biorch-git              │
+                 │                          │
+                 │ Review/commit/push the    │
+                 │ completed phase changes   │
+                 └────────────┬─────────────┘
+                              │
+                              ▼
+              ╔══════════════════════════════════╗
+              ║       PLAN THE NEXT PHASE        ║
+              ╚══════════════════════════════════╝
+                              │
+                    ┌─────────┴─────────┐
+                    ▼                   ▼
+          ┌─────────────────┐   ┌─────────────────┐
+          │ /biorch-next    │   │ /biorch-roadmap │
+          │                 │   │                 │
+          │ What should     │   │ Where is the    │
+          │ I do next?      │   │ project going?  │
+          └────────┬────────┘   └────────┬────────┘
+                   │                     │
+                   └──────────┬──────────┘
+                              ▼
+                    NEXT PHASE CONTRACT
+                              │
+                              ▼
+                         🔄 REPEAT
