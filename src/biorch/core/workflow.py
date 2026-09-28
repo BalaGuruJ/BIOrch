@@ -12,6 +12,7 @@ class Workflow(BaseModel):
     Represents orchestration state and dependencies.
     """
     workflow_id: str = Field(..., description="Unique identifier for the workflow execution.")
+    version: str = Field(default="1.0", description="Version of the workflow definition.")
     tasks: List[Task] = Field(default_factory=list, description="List of tasks in this workflow.")
     status: str = Field(..., description="Overall status of the workflow (e.g., pending, running, completed, failed).")
     current_state: Optional[Dict[str, Any]] = Field(default=None, description="The current state of the workflow context.")
