@@ -1,0 +1,59 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Tableau Metadata Artifact",
+  "type": "object",
+  "required": ["schema_version", "workbook_metadata"],
+  "properties": {
+    "schema_version": {"type": "string", "enum": ["1.0"]},
+    "workbook_metadata": {
+      "type": "object",
+      "required": ["entities", "relationships", "validation"],
+      "properties": {
+        "entities": {
+          "type": "object",
+          "required": ["datasources", "tables", "columns", "fields", "column_instances", "worksheets"],
+          "properties": {
+            "datasources": {"type": "array", "items": {"$ref": "#/$defs/datasource"}},
+            "tables": {"type": "array", "items": {"$ref": "#/$defs/table"}},
+            "columns": {"type": "array", "items": {"$ref": "#/$defs/column"}},
+            "fields": {"type": "array", "items": {"$ref": "#/$defs/field"}},
+            "column_instances": {"type": "array", "items": {"$ref": "#/$defs/column_instance"}},
+            "worksheets": {"type": "array", "items": {"$ref": "#/$defs/worksheet"}}
+          }
+        },
+        "relationships": {
+          "type": "object",
+          "required": ["datasource_tables", "table_columns", "column_fields", "field_column_instances", "column_instance_worksheets"],
+          "properties": {
+            "datasource_tables": {"type": "array", "items": {"$ref": "#/$defs/datasource_table"}},
+            "table_columns": {"type": "array", "items": {"$ref": "#/$defs/table_column"}},
+            "column_fields": {"type": "array", "items": {"$ref": "#/$defs/column_field"}},
+            "field_column_instances": {"type": "array", "items": {"$ref": "#/$defs/field_column_instance"}},
+            "column_instance_worksheets": {"type": "array", "items": {"$ref": "#/$defs/column_instance_worksheet"}}
+          }
+        },
+        "validation": {
+          "type": "object",
+          "required": ["issues", "accepted_unresolved"],
+          "properties": {
+            "issues": {"type": "array", "items": {"type": "object"}},
+            "accepted_unresolved": {"type": "array", "items": {"type": "object"}}
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "datasource": {"type": "object", "required": ["canonical_id", "name", "connection_class", "version"], "properties": {"canonical_id": {"type": "string"}, "name": {"type": "string"}, "connection_class": {"type": "string"}, "version": {"type": "string"}}},
+    "table": {"type": "object", "required": ["canonical_id", "datasource_id", "relation_name", "connection_name"], "properties": {"canonical_id": {"type": "string"}, "datasource_id": {"type": "string"}, "relation_name": {"type": "string"}, "connection_name": {"type": "string"}}},
+    "column": {"type": "object", "required": ["canonical_id", "datasource_id", "parent_name", "remote_name"], "properties": {"canonical_id": {"type": "string"}, "datasource_id": {"type": "string"}, "parent_name": {"type": "string"}, "remote_name": {"type": "string"}}},
+    "field": {"type": "object", "required": ["canonical_id", "datasource_id", "field_name"], "properties": {"canonical_id": {"type": "string"}, "datasource_id": {"type": "string"}, "field_name": {"type": "string"}}},
+    "column_instance": {"type": "object", "required": ["canonical_id", "datasource_id", "column_instance_name"], "properties": {"canonical_id": {"type": "string"}, "datasource_id": {"type": "string"}, "column_instance_name": {"type": "string"}}},
+    "worksheet": {"type": "object", "required": ["canonical_id", "worksheet_name"], "properties": {"canonical_id": {"type": "string"}, "worksheet_name": {"type": "string"}}},
+    "datasource_table": {"type": "object", "required": ["datasource_id", "table_id"], "properties": {"datasource_id": {"type": "string"}, "table_id": {"type": "string"}}},
+    "table_column": {"type": "object", "required": ["table_id", "column_id"], "properties": {"table_id": {"type": "string"}, "column_id": {"type": "string"}}},
+    "column_field": {"type": "object", "required": ["column_id", "field_id"], "properties": {"column_id": {"type": "string"}, "field_id": {"type": "string"}}},
+    "field_column_instance": {"type": "object", "required": ["field_id", "column_instance_id"], "properties": {"field_id": {"type": "string"}, "column_instance_id": {"type": "string"}}},
+    "column_instance_worksheet": {"type": "object", "required": ["column_instance_id", "worksheet_id"], "properties": {"column_instance_id": {"type": "string"}, "worksheet_id": {"type": "string"}}}
+  }
+}

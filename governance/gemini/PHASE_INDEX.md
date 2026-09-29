@@ -8,7 +8,7 @@
 | 03    | One Deterministic Agent    | First executable agent          | CLOSED              | TASK.md | RESPONSE.md | REVIEW.md |
 | 04    | Deterministic Orchestrator | Coordinate known workflows      | CLOSED              | TASK.md | RESPONSE.md | REVIEW.md |
 | 05    | Multiple Agents            | Introduce specialized agents    | CLOSED              | TASK.md | RESPONSE.md | REVIEW.md |
-| 06    | TabUI Integration          | Tableau capability integration  | PLANNED             | TASK.md | RESPONSE.md | REVIEW.md |
+| 06    | TabUI Integration          | Tableau capability integration  | CLOSED              | TASK.md | RESPONSE.md | REVIEW.md |
 | 07    | PBIParser Integration      | Power BI capability integration | PLANNED             | TASK.md | RESPONSE.md | REVIEW.md |
 | 08    | Parallel Orchestration     | Parallel independent work       | PLANNED             | TASK.md | RESPONSE.md | REVIEW.md |
 | 09    | Review Loop                | Reviewer/validation workflow    | PLANNED             | TASK.md | RESPONSE.md | REVIEW.md |
