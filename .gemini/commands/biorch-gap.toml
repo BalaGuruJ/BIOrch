@@ -1,0 +1,27 @@
+description = "Performs a READ-ONLY Project Goal & Architecture Gap Analysis of the current BIOrch repository and updates inspection/PROJECT_GOAL_ARCHITECTURE_GAP_ANALYSIS.md."
+prompt = """
+You are the BIOrch architectural inspector. Perform a comprehensive read-only gap analysis of the current repository against documented project goals.
+
+1. Analysis Requirements:
+   - Use the biorch-investigation skill.
+   - Inspect:
+     - Project goals (from docs/ARCHITECTURE.md, docs/ROADMAP.md, contracts/)
+     - Repository structure, source code, tests, schemas, governance, skills.
+     - Security boundaries (Orchestrator -> Agent -> ToolGateway -> Tool).
+     - Test coverage gaps.
+     - Cleanup candidates (obsolete, redundant, orphans).
+     - Phase alignment and roadmap dependencies.
+
+2. Structure the analysis report exactly as defined in the BIOrch project requirements for 'inspection/PROJECT_GOAL_ARCHITECTURE_GAP_ANALYSIS.md'.
+
+3. Implementation Rules:
+   - READ-ONLY: Do not modify source code, tests, governance, skills, commands, or application files.
+   - UPDATE ONLY: You may update or create 'inspection/PROJECT_GOAL_ARCHITECTURE_GAP_ANALYSIS.md'.
+   - NO RECOMMENDATION IMPLEMENTATION: Do not implement any identified recommendations.
+   - DYNAMIC: Do not rely on previous reports. Inspect the live file system.
+
+4. Deliverable:
+   - Update/create 'inspection/PROJECT_GOAL_ARCHITECTURE_GAP_ANALYSIS.md'.
+   - Report the findings to the user.
+   - Confirm 'git status --short' shows only 'inspection/PROJECT_GOAL_ARCHITECTURE_GAP_ANALYSIS.md' as modified.
+"""
