@@ -3,6 +3,7 @@ from biorch.core.workflow import Workflow
 from biorch.core.result import Result, ResultStatus
 from biorch.core.task import Task
 from biorch.agents.deterministic_agent import DeterministicAgentExecutor
+from biorch.orchestration.agent_resolver import AgentResolver, AgentNotFoundError
 from .result import WorkflowResult, WorkflowResultStatus
 
 class DeterministicOrchestrator:
@@ -11,8 +12,15 @@ class DeterministicOrchestrator:
     Coordinates sequential execution of explicitly defined workflows through
     the DeterministicAgentExecutor without directly accessing lower-level gateways or tools.
     """
-    def __init__(self, agent_executor: DeterministicAgentExecutor):
-        self.agent_executor = agent_executor
+    def __init__(self, agent_resolver_or_executor):
+        if isinstance(agent_resolver_or_executor, AgentResolver):
+            self.agent_resolver = agent_resolver_or_executor
+        else:
+            # Backward compatibility for Phase 04 workflows
+            self.agent_resolver = AgentResolver({
+                agent_resolver_or_executor.agent_definition.agent_id: agent_resolver_or_executor
+            })
+            self.agent_executor = agent_resolver_or_executor
 
     def validate_workflow(self, workflow: Workflow) -> List[str]:
         """
@@ -46,8 +54,6 @@ class DeterministicOrchestrator:
             return errors
 
         seen_task_ids = set()
-        available_agent_id = getattr(getattr(self.agent_executor, "agent_definition", None), "agent_id", None)
-        agent_def = getattr(self.agent_executor, "agent_definition", None)
 
         for idx, task in enumerate(workflow.tasks):
             # 4. Malformed step validation
@@ -78,29 +84,34 @@ class DeterministicOrchestrator:
             # 7. Target agent availability
             if not getattr(task, "agent_id", None) or not isinstance(task.agent_id, str) or not task.agent_id.strip():
                 errors.append(f"Step '{task.task_id}' missing target agent identifier")
-            elif task.agent_id != available_agent_id:
-                errors.append(f"Target agent '{task.agent_id}' is not available for step '{task.task_id}'")
-
-            # 8. Required inputs
-            if not hasattr(task, "inputs") or task.inputs is None or not isinstance(task.inputs, dict):
-                errors.append(f"Step '{task.task_id}' is missing required inputs")
             else:
-                op = task.inputs.get("operation")
-                tool_id = task.inputs.get("tool_id")
+                try:
+                    executor = self.agent_resolver.resolve(task.agent_id)
+                    agent_def = getattr(executor, "agent_definition", None)
+                except AgentNotFoundError:
+                    errors.append(f"Target agent '{task.agent_id}' is not available for step '{task.task_id}'")
+                    continue
 
-                if not op or not isinstance(op, str) or not op.strip():
-                    errors.append(f"Step '{task.task_id}' is missing required input: operation")
-                if not tool_id or not isinstance(tool_id, str) or not tool_id.strip():
-                    errors.append(f"Step '{task.task_id}' is missing required input: tool_id")
+                # 8. Required inputs
+                if not hasattr(task, "inputs") or task.inputs is None or not isinstance(task.inputs, dict):
+                    errors.append(f"Step '{task.task_id}' is missing required inputs")
+                else:
+                    op = task.inputs.get("operation")
+                    tool_id = task.inputs.get("tool_id")
 
-                # 9. Supported operations and permitted tools (agent boundary)
-                if agent_def:
-                    if getattr(agent_def, "supported_operations", None) is not None and isinstance(op, str) and op.strip():
-                        if op not in agent_def.supported_operations:
-                            errors.append(f"Unsupported operation '{op}' for step '{task.task_id}'")
-                    if getattr(agent_def, "allowed_tools", None) is not None and isinstance(tool_id, str) and tool_id.strip():
-                        if tool_id not in agent_def.allowed_tools:
-                            errors.append(f"Unauthorized tool '{tool_id}' for step '{task.task_id}'")
+                    if not op or not isinstance(op, str) or not op.strip():
+                        errors.append(f"Step '{task.task_id}' is missing required input: operation")
+                    if not tool_id or not isinstance(tool_id, str) or not tool_id.strip():
+                        errors.append(f"Step '{task.task_id}' is missing required input: tool_id")
+
+                    # 9. Supported operations and permitted tools (agent boundary)
+                    if agent_def:
+                        if getattr(agent_def, "supported_operations", None) is not None and isinstance(op, str) and op.strip():
+                            if op not in agent_def.supported_operations:
+                                errors.append(f"Unsupported operation '{op}' for step '{task.task_id}'")
+                        if getattr(agent_def, "allowed_tools", None) is not None and isinstance(tool_id, str) and tool_id.strip():
+                            if tool_id not in agent_def.allowed_tools:
+                                errors.append(f"Unauthorized tool '{tool_id}' for step '{task.task_id}'")
 
             # 10. Step constraints
             if getattr(task, "status", None) in ("failed", "cancelled"):
@@ -191,7 +202,51 @@ class DeterministicOrchestrator:
 
         for i, task in enumerate(workflow.tasks):
             executed_order.append(task.task_id)
-            result = self.agent_executor.execute(task)
+            
+            try:
+                executor = self.agent_resolver.resolve(task.agent_id)
+                result = executor.execute(task)
+            except AgentNotFoundError:
+                # Terminal workflow failure
+                failed_task = task.task_id
+                terminal_status = WorkflowResultStatus.FAILED
+                
+                step_results[task.task_id] = {
+                    "status": WorkflowResultStatus.FAILED.value,
+                    "findings": [],
+                    "errors": [f"Agent '{task.agent_id}' not found during execution"]
+                }
+                
+                # Mark remaining tasks as NOT_EXECUTED
+                remaining_tasks = workflow.tasks[i + 1:]
+                not_executed_tasks = [t.task_id for t in remaining_tasks]
+                for t in remaining_tasks:
+                    step_results[t.task_id] = {
+                        "status": WorkflowResultStatus.NOT_EXECUTED.value,
+                        "findings": [],
+                        "errors": []
+                    }
+
+                return WorkflowResult(
+                    workflow_id=workflow_id,
+                    workflow_version=workflow_version,
+                    status=terminal_status,
+                    completed_tasks=completed_tasks,
+                    failed_task=failed_task,
+                    not_executed_tasks=not_executed_tasks,
+                    results=results,
+                    step_results=step_results,
+                    errors=[f"Agent '{task.agent_id}' not found during execution"],
+                    provenance={
+                        "workflow_id": workflow_id,
+                        "workflow_version": workflow_version,
+                        "validation_passed": True,
+                        "execution_order": executed_order,
+                        "completed_steps": completed_tasks,
+                        "failed_step": failed_task,
+                        "terminal_status": terminal_status.value
+                    }
+                )
 
             if result.status == ResultStatus.SUCCESS:
                 completed_tasks.append(task.task_id)

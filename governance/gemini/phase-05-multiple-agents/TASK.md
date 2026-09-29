@@ -1,42 +1,60 @@
-# Phase 05 — Multiple Agents
+# TASK: Phase 05 — Multiple-Agent Routing
 
-## Objective
+**Task ID:** TASK-05
+**Phase:** Phase 05 — Multiple Agents
+**Status:** DRAFT
+**Contract:** contracts/orchestrator/AGENT_RESOLVER_CONTRACT.md
 
-[TASK TO BE DEFINED]
+---
 
-## Scope
+## 1. Objective
+Implement a deterministic, read-only `AgentResolver` to support routing to multiple `DeterministicAgentExecutor` instances, refactoring the `Orchestrator` to utilize this resolver while maintaining strict Phase 04 backward compatibility.
 
-[TASK TO BE DEFINED]
+## 2. Scope
+### Implementation (Read-Only/Static)
+1.  Define `AgentNotFoundError` exception.
+2.  Implement `AgentResolver` class in `src/biorch/orchestration/agent_resolver.py`.
+    -   Method: `resolve(agent_id: str) -> DeterministicAgentExecutor`
+    -   Static, immutable agent mapping (initialized at startup).
+3.  Refactor `src/biorch/orchestration/orchestrator.py` to:
+    -   Accept `AgentResolver` via dependency injection.
+    -   Use `AgentResolver` for `DeterministicAgentExecutor` lookup during task delegation.
+    -   Maintain Phase 04 behavior (support single-agent lookup if resolver is initialized with one executor).
+    -   Handle `AgentNotFoundError` as terminal workflow failure.
 
-## Prerequisites
+### Testing
+-   Unit tests in `tests/test_resolver.py`:
+    -   Successful lookup of valid `agent_id`.
+    -   `AgentNotFoundError` for invalid `agent_id`.
+    -   Deterministic consistency of mapping.
+-   Refine/extend integration tests in `tests/test_orchestrator.py`:
+    -   Verify orchestrator functionality with `AgentResolver` injection.
+    -   Verify workflow failure semantics upon resolver failure.
 
-[TASK TO BE DEFINED]
+## 3. Explicit Non-Goals
+-   `AgentRegistry` (Dynamic/Mutable)
+-   Capability-based discovery / matching / scoring
+-   LLM-based routing
+-   Dynamic planning
+-   Parallel orchestration
+-   Changes to existing contracts (`Agent`, `Task`, `Workflow`, `Result`, `ToolGateway`)
+-   Authorization boundary changes (remain in `ToolGateway`)
+-   Domain-specific Tableau/Power BI agent changes
 
-## Files / Areas Expected to Change
+## 4. Implementation Plan (Files Affected)
+*   **New File:** `src/biorch/orchestration/agent_resolver.py`
+*   **Modified File:** `src/biorch/orchestration/orchestrator.py`
+*   **New File:** `tests/test_resolver.py`
+*   **Modified File:** `tests/test_orchestrator.py`
 
-[TO BE DEFINED]
+## 5. Acceptance Criteria
+1.  `AgentResolver` successfully maps known `agent_id` to executor.
+2.  `AgentResolver` raises `AgentNotFoundError` for unknown `agent_id`.
+3.  `Orchestrator` uses `AgentResolver` for delegation.
+4.  Phase 04 workflows work identically with the new `AgentResolver` configuration.
+5.  Tests demonstrate all lookup scenarios (Success/Failure) and orchestrator integration.
 
-## Required Implementation
+---
 
-[TO BE DEFINED]
-
-## Acceptance Criteria
-
-[TO BE DEFINED]
-
-## Execution Restrictions
-
-[TO BE DEFINED]
-
-## Expected Response Format
-
-Gemini should eventually report:
-
-1. Files created
-2. Files modified
-3. Files deleted, if any
-4. Implementation summary
-5. Tests/validation performed
-6. Known limitations
-7. Architectural decisions
-8. Any deviations from the task
+## 6. Unresolved Questions
+None. The design is strictly bounded by the approved `AGENT_RESOLVER_CONTRACT.md`.
