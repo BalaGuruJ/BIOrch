@@ -8,7 +8,8 @@
         "type": "object",
         "properties": {
           "id": {"type": "string"},
-          "name": {"type": "string"}
+          "name": {"type": "string"},
+          "annotations": {"type": "array", "items": {"type": "object", "properties": {"name": {"type": "string"}, "value": {"type": "string"}}}}
         },
         "required": ["id", "name"]
       }
@@ -21,9 +22,12 @@
           "id": {"type": "string"},
           "name": {"type": "string"},
           "table_id": {"type": "string"},
-          "data_type": {"type": "string"}
+          "data_type": {"type": "string"},
+          "is_calculated": {"type": "boolean"},
+          "expression": {"type": ["string", "null"]},
+          "annotations": {"type": "array", "items": {"type": "object", "properties": {"name": {"type": "string"}, "value": {"type": "string"}}}}
         },
-        "required": ["id", "name", "table_id", "data_type"]
+        "required": ["id", "name", "table_id", "data_type", "is_calculated"]
       }
     },
     "measures": {
@@ -34,7 +38,8 @@
           "id": {"type": "string"},
           "name": {"type": "string"},
           "table_id": {"type": "string"},
-          "expression": {"type": "string"}
+          "expression": {"type": "string"},
+          "annotations": {"type": "array", "items": {"type": "object", "properties": {"name": {"type": "string"}, "value": {"type": "string"}}}}
         },
         "required": ["id", "name", "table_id", "expression"]
       }
@@ -45,12 +50,58 @@
         "type": "object",
         "properties": {
           "id": {"type": "string"},
+          "from_table_id": {"type": "string"},
           "from_column_id": {"type": "string"},
-          "to_column_id": {"type": "string"}
+          "to_table_id": {"type": "string"},
+          "to_column_id": {"type": "string"},
+          "is_active": {"type": "boolean"},
+          "cardinality": {"type": "string"},
+          "cross_filter_direction": {"type": "string"},
+          "annotations": {"type": "array", "items": {"type": "object", "properties": {"name": {"type": "string"}, "value": {"type": "string"}}}}
         },
-        "required": ["id", "from_column_id", "to_column_id"]
+        "required": ["id", "from_column_id", "to_column_id", "from_table_id", "to_table_id"]
+      }
+    },
+    "partitions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {"type": "string"},
+          "name": {"type": "string"},
+          "table_id": {"type": "string"},
+          "source_evidence": {"type": ["object", "null"], "properties": {"source_type": {"type": "string"}, "expression": {"type": ["string", "null"]}}},
+          "provenance_type": {"type": "string"}
+        },
+        "required": ["id", "name", "table_id", "provenance_type"]
+      }
+    },
+    "hierarchies": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {"type": "string"},
+          "name": {"type": "string"},
+          "table_id": {"type": "string"},
+          "levels": {"type": "array", "items": {"type": "object", "properties": {"id": {"type": "string"}, "hierarchy_id": {"type": "string"}, "column_id": {"type": "string"}, "ordinal": {"type": "integer"}}}},
+          "annotations": {"type": "array", "items": {"type": "object", "properties": {"name": {"type": "string"}, "value": {"type": "string"}}}}
+        },
+        "required": ["id", "name", "table_id", "levels"]
+      }
+    },
+    "calculation_groups": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {"type": "string"},
+          "name": {"type": "string"},
+          "items": {"type": "array", "items": {"type": "object", "properties": {"id": {"type": "string"}, "name": {"type": "string"}, "expression": {"type": "string"}, "ordinal": {"type": "integer"}}}}
+        },
+        "required": ["id", "name", "items"]
       }
     }
   },
-  "required": ["tables", "columns", "measures", "relationships"]
+  "required": ["tables", "columns", "measures", "relationships", "partitions", "hierarchies", "calculation_groups"]
 }

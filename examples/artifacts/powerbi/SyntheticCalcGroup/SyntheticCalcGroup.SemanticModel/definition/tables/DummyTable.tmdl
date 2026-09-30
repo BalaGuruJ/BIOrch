@@ -1,0 +1,5 @@
+table 'DummyTable'
+    column 'DummyCol'
+        dataType: int64
+    calculationGroup 'MyCalcGroup'
+        calculationItem 'MyItem' = "SELECTEDMEASURE() + 1"

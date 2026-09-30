@@ -1,0 +1,2 @@
+model Model
+    ref table DummyTable
