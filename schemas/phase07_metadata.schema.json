@@ -1,0 +1,56 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "tables": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {"type": "string"},
+          "name": {"type": "string"}
+        },
+        "required": ["id", "name"]
+      }
+    },
+    "columns": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {"type": "string"},
+          "name": {"type": "string"},
+          "table_id": {"type": "string"},
+          "data_type": {"type": "string"}
+        },
+        "required": ["id", "name", "table_id", "data_type"]
+      }
+    },
+    "measures": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {"type": "string"},
+          "name": {"type": "string"},
+          "table_id": {"type": "string"},
+          "expression": {"type": "string"}
+        },
+        "required": ["id", "name", "table_id", "expression"]
+      }
+    },
+    "relationships": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {"type": "string"},
+          "from_column_id": {"type": "string"},
+          "to_column_id": {"type": "string"}
+        },
+        "required": ["id", "from_column_id", "to_column_id"]
+      }
+    }
+  },
+  "required": ["tables", "columns", "measures", "relationships"]
+}
