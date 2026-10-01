@@ -1,1 +1,2 @@
-database 'SyntheticModel'
+database
+	compatibilityLevel: 1606

@@ -1,5 +1,12 @@
-table 'DummyTable'
-    column 'DummyCol'
-        dataType: int64
-    calculationGroup 'MyCalcGroup'
-        calculationItem 'MyItem' = "SELECTEDMEASURE() + 1"
+table DummyTable
+	calculationGroup
+		precedence: 10
+
+		calculationItem MyItem = "SELECTEDMEASURE() + 1"
+
+	column DummyCol
+		dataType: int64
+		summarizeBy: none
+		sourceColumn: DummyCol
+
+	partition DummyTable = calculationGroup

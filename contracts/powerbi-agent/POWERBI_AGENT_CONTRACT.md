@@ -1,625 +1,913 @@
-# BIOrch Power BI Agent Contract
+# BIOrch Power BI Agent Architecture Contract
 
-**Contract:** POWERBI_AGENT_CONTRACT  
-**Version:** V1  
-**Phase:** Phase 07 — PBIParser Integration  
-**Status:** DRAFT — Architecture Definition  
+**Contract:** POWERBI_AGENT_CONTRACT
+**Version:** V2.0
+**Phase:** Phase 07 — Power BI Integration
+**Status:** AUTHORITATIVE — ARCHITECTURE BASELINE
 **Capability:** Power BI Semantic Model Metadata Extraction
 
 ---
 
 ## 1. Purpose
 
-This contract defines the architectural and behavioral boundary for the BIOrch
-Power BI capability.
+This contract defines the authoritative architectural and behavioral boundary
+for the BIOrch Power BI integration.
 
-Phase 07 integrates Power BI Semantic Model metadata extraction into BIOrch.
+Phase 07 establishes a deterministic, reproducible, metadata-only capability
+for extracting Power BI Semantic Model metadata and converting it into a
+stable BIOrch canonical representation.
 
-The capability MUST provide deterministic extraction of Power BI Semantic Model
-metadata and MUST expose the extracted metadata through the BIOrch integration
-boundary.
-
-This contract intentionally defines the capability independently of any specific
-third-party TMDL parser implementation.
+This contract defines the required BIOrch behavior independently of any
+specific third-party parser implementation.
 
 ---
 
-## 2. Phase 07 V1 Scope
+# 2. Architectural Objective
 
-Phase 07 V1 is limited to:
+The Phase 07 architecture MUST establish the following pipeline:
 
-> Power BI Semantic Model metadata extraction.
+    Power BI Semantic Model
+            |
+            v
+    Parser Implementation Boundary
+            |
+            v
+    Power BI Adapter
+            |
+            v
+    BIOrch Canonical Model
+            |
+            v
+    Structural Validation
+            |
+            v
+    Deterministic Serialization
+            |
+            v
+    Contracted JSON Artifact
 
-The V1 input boundary is the Power BI `SemanticModel` directory.
+The parser implementation is an internal implementation detail.
 
-V1 does NOT require the `.pbip` project file.
-
-V1 does NOT extract Power BI Report/PBIR/visual metadata.
-
----
-
-## 3. Explicitly Out of Scope
-
-The following are outside Phase 07 V1:
-
-- Power BI Report metadata
-- Pages
-- Visuals
-- Visual configurations
-- Visual-to-field bindings
-- Report-level lineage
-- Power BI Service APIs
-- Fabric APIs
-- Dataset execution
-- Query execution
-- DAX execution
-- Power Query/M execution
-- Data extraction
-- Credential handling
-- Authentication against Power BI services
-- Cloud deployment
-- LLM-based interpretation of semantic model metadata
-
-These may be addressed by future phases/capabilities.
+The canonical BIOrch representation is the architectural boundary that
+protects the rest of BIOrch from parser-specific structures.
 
 ---
 
-## 4. Input Contract
+# 3. Scope
 
-### 4.1 Required Input
+## 3.1 In Scope
 
-The capability MUST accept a Power BI Semantic Model directory.
+Phase 07 covers metadata extraction from a Power BI Semantic Model,
+including TMDL-based semantic model definitions.
 
-Example:
+The capability includes, where represented by the source model:
 
-    <model>.SemanticModel/
-    └── definition/
-        ├── model.tmdl
-        ├── relationships.tmdl
-        ├── expressions.tmdl
-        ├── tables/
-        ├── cultures/
-        └── ...
+- model metadata
+- tables
+- columns
+- calculated columns
+- measures
+- relationships
+- relationship metadata
+- hierarchies
+- hierarchy levels
+- partitions
+- M expressions
+- calculation groups
+- calculation items
+- annotations
+- lineage metadata
+- DAX expressions
+- source metadata
+- parser/source provenance
 
-The implementation MUST NOT require the `.pbip` file for V1 extraction.
+## 3.2 Explicitly Out of Scope
 
-### 4.2 Input Integrity
+Phase 07 does NOT implement Power BI Report/visual metadata extraction.
 
-The loader MUST:
+The following are therefore outside the Phase 07 canonical semantic-model
+boundary unless explicitly introduced by a future governed phase:
 
-- verify that the supplied path exists;
-- verify that the expected Semantic Model structure is present;
-- reject unsupported or malformed input deterministically;
-- avoid silently treating an arbitrary directory as a valid Semantic Model.
+- report visuals
+- visual configuration
+- visual layout
+- report pages
+- bookmarks
+- report interaction configuration
+- report-level visual formatting
 
----
-
-## 5. Architectural Boundary
-
-The implementation MUST maintain the following separation:
-
-    SemanticModel
-          |
-          v
-    Power BI Parser
-          |
-          v
-    Parser Adapter
-          |
-          v
-    BIOrch Canonical Metadata
-          |
-          v
-    Relationship Resolution
-          |
-          v
-    Validation
-          |
-          v
-    Serialization
-          |
-          v
-    Contracted Output
-
-The third-party parser MUST NOT become the BIOrch canonical model.
-
-Parser-specific implementation details MUST remain behind the adapter boundary.
-
-The specific parser library MAY be replaced without requiring a redesign of
-the Power BI Agent contract, provided the adapter contract remains satisfied.
+The presence of a PBIP project does not make report metadata part of the
+Phase 07 semantic-model contract.
 
 ---
 
-## 6. Determinism Requirement
+# 4. Input Boundary
 
-Semantic model extraction MUST be deterministic.
+The primary Phase 07 input is a Power BI Semantic Model definition.
 
-Given the same input Semantic Model and the same parser/integration version,
-the implementation MUST produce semantically equivalent canonical metadata.
+The implementation MUST be capable of operating against the semantic-model
+directory structure used by the supported PBIP/PBIR project representation.
 
-The extraction pipeline MUST NOT depend on:
+The semantic-model definition is the authoritative input for semantic-model
+metadata extraction.
 
-- LLM responses;
-- network calls;
-- Power BI Service availability;
-- nondeterministic external services;
-- model-generated interpretation.
+The implementation MUST NOT require the `.pbip` wrapper file when the
+semantic-model directory contains all required metadata.
 
----
-
-## 7. Canonical Metadata Scope
-
-V1 SHOULD represent the following semantic objects when present and supported
-by the source model:
-
-### Model
-
-- model identity;
-- model metadata;
-- culture information where available.
-
-### Tables
-
-- table identity;
-- table name;
-- hidden state where available;
-- lineage metadata where available;
-- table-level annotations where applicable.
-
-### Columns
-
-- column identity;
-- name;
-- data type;
-- source column;
-- hidden state;
-- format metadata where available;
-- summarization metadata where available;
-- lineage metadata where available.
-
-### Calculated Columns
-
-- identity;
-- name;
-- DAX expression;
-- relevant metadata;
-- lineage metadata where available.
-
-### Measures
-
-- identity;
-- name;
-- DAX expression;
-- format string where available;
-- display folder where available;
-- lineage metadata where available.
-
-### Relationships
-
-- relationship identity where available;
-- source/from table;
-- source/from column;
-- target/to table;
-- target/to column;
-- cardinality;
-- active/inactive state;
-- cross-filtering behavior where available.
-
-### Hierarchies
-
-When present and reliably represented by the parser:
-
-- hierarchy identity;
-- hierarchy name;
-- hierarchy levels;
-- referenced columns.
-
-### Partitions / Power Query Metadata
-
-When present and reliably represented:
-
-- partition identity;
-- source information;
-- M/Power Query expression text;
-- relevant partition metadata.
-
-### Calculation Groups
-
-When present and reliably represented:
-
-- calculation group identity;
-- calculation items;
-- calculation item expressions;
-- relevant metadata.
-
-Unsupported or unavailable metadata MUST NOT be fabricated.
+The implementation MAY accept a higher-level PBIP path in the future, but
+such support MUST resolve to the semantic-model boundary defined by this
+contract.
 
 ---
 
-## 8. Expression Handling
+# 5. Historical Parser Baseline
 
-DAX and Power Query/M expressions MUST be treated as metadata.
-
-The implementation MAY preserve expressions such as:
-
-- measure DAX;
-- calculated-column DAX;
-- calculation-item DAX;
-- Power Query/M expressions.
-
-The implementation MUST NOT execute DAX or M as part of metadata extraction.
-
-Expressions MUST be preserved as source metadata where supported.
-
----
-
-## 9. Identity Model
-
-The implementation MUST distinguish between:
-
-1. BIOrch canonical identity;
-2. Power BI source identity;
-3. Power BI lineage metadata.
-
-These concepts MUST NOT be conflated.
-
-Where a Power BI lineage tag exists, it SHOULD be preserved as source metadata.
-
-Canonical IDs MUST remain stable within the BIOrch representation and MUST NOT
-depend exclusively on a Power BI lineage tag.
-
----
-
-## 10. Provenance
-
-Each canonical object SHOULD retain sufficient provenance to identify its source.
-
-At minimum, provenance SHOULD identify:
-
-- source file;
-- source object/declaration where available.
-
-Line/column ranges MAY be included when reliably exposed by the parser.
-
-Line/column provenance is NOT a mandatory V1 requirement when the selected
-parser cannot reliably provide it.
-
-The implementation MUST NOT fabricate source locations.
-
----
-
-## 11. Relationship Integrity
-
-The integration MUST explicitly resolve relationships between canonical entities.
-
-Examples include:
-
-    Table -> Column
-    Table -> Measure
-    Relationship -> From Table
-    Relationship -> From Column
-    Relationship -> To Table
-    Relationship -> To Column
-    Hierarchy -> Level
-    Hierarchy Level -> Column
-    Partition -> Table
-    Calculation Group -> Calculation Item
-
-Validation MUST distinguish between:
-
-- successfully resolved relationships;
-- genuinely invalid relationships;
-- unsupported source constructs;
-- known, explicitly accepted unresolved metadata.
-
-Unknown unresolved relationships MUST NOT be silently discarded.
-
----
-
-## 12. Unresolved Metadata
-
-The implementation MUST NOT use broad or unconditional exception handling to
-suppress unresolved relationships.
-
-If an unresolved relationship is intentionally accepted, the acceptance MUST:
-
-- identify the specific condition;
-- be narrowly scoped;
-- be documented;
-- be covered by validation tests.
-
-A parser limitation MUST NOT automatically be classified as valid source metadata.
-
----
-
-## 13. Validation
-
-The validation layer MUST verify at minimum:
-
-- canonical identity uniqueness;
-- referenced tables exist;
-- referenced columns exist;
-- relationship endpoints resolve;
-- hierarchy references resolve;
-- calculation-group references resolve where supported;
-- canonical entities are internally consistent.
-
-Validation MUST fail deterministically when an unexpected integrity violation
-is detected.
-
-Validation rules MUST remain separate from parsing logic.
-
----
-
-## 14. Serialization
-
-The V1 implementation MUST provide a deterministic machine-readable output.
-
-JSON is the required V1 serialization format.
-
-The serialized representation MUST:
-
-- represent canonical metadata;
-- preserve required relationships;
-- preserve applicable provenance;
-- preserve supported DAX/M expressions;
-- have a stable structure;
-- validate against the Phase 07 JSON Schema.
-
-CSV output is NOT required for Phase 07 V1 unless explicitly added by a later
-contract revision.
-
----
-
-## 15. JSON Schema
-
-A Phase 07 JSON Schema MUST define the externally consumable serialized
-representation.
-
-The schema MUST be versioned independently from parser implementation details.
-
-Schema validation MUST be part of the integration verification process.
-
----
-
-## 16. Error Handling
-
-The implementation MUST fail explicitly for:
-
-- missing Semantic Model input;
-- invalid Semantic Model structure;
-- parser failure;
-- canonicalization failure;
-- unexpected relationship-resolution failure;
-- serialization failure;
-- schema-validation failure.
-
-Errors MUST provide enough context to identify the failed stage.
-
-The implementation MUST NOT silently convert fatal extraction errors into
-successful empty output.
-
----
-
-## 17. Agent Boundary
-
-The Power BI Agent is responsible for orchestration of the Power BI capability.
-
-The Agent MUST NOT contain:
-
-- TMDL parsing logic;
-- canonical entity construction logic;
-- relationship-resolution algorithms;
-- JSON serialization implementation.
-
-Those responsibilities belong to the corresponding integration layers.
-
-The Agent MAY invoke the Power BI integration capability through the approved
-BIOrch tool/integration boundary.
-
----
-
-## 18. LLM Boundary
-
-The Phase 07 deterministic extraction pipeline MUST NOT require an LLM.
-
-LLMs MUST NOT be used to:
-
-- parse TMDL;
-- invent missing metadata;
-- resolve relationships through semantic guessing;
-- modify extracted expressions;
-- determine whether source metadata exists;
-- fabricate provenance.
-
-Future LLM-based analysis may consume the canonical Power BI metadata as a
-separate capability.
-
----
-
-## 19. Baseline Relationship
-
-The existing Power BI parser located under:
+The existing artifact:
 
     examples/artifacts/powerbi/phase7_powerbi_parser/
     powerbi_parser_baseline/
 
-is a reference implementation/baseline.
+is classified as:
 
-It is NOT itself the BIOrch contract.
+    REFERENCE / NON-REPRODUCIBLE BASELINE
 
-The baseline MAY be reused through an adapter where its behavior satisfies
-this contract.
+The repository evidence establishes that the historical adapter imports
+`tmdlparser`, but the repository does not contain sufficient dependency
+provenance to reproduce that parser.
 
-Differences between baseline behavior and this contract MUST be documented
-rather than silently inherited.
+The following have not been established:
 
-The baseline MUST remain preserved as a reference artifact.
-
----
-
-## 20. Reference Fixture
-
-The AdventureWorks Sales Semantic Model is the primary Phase 07 V1 reference
-fixture.
-
-The fixture SHOULD be used to verify:
-
-- table extraction;
-- column extraction;
-- measure extraction;
-- relationship extraction;
-- hierarchy extraction where present;
-- partition/M metadata where present;
-- calculation-group metadata where present;
-- provenance;
-- deterministic serialization;
-- schema validation.
-
-Expected counts and other factual assertions MUST be derived from the actual
-reference fixture and recorded as validation evidence.
-
----
-
-## 21. Testing Requirements
-
-The implementation MUST include tests covering:
-
-### Positive Tests
-
-- valid Semantic Model loading;
-- model extraction;
-- table extraction;
-- column extraction;
-- measure extraction;
-- relationship extraction;
-- supported hierarchy extraction;
-- supported partition extraction;
-- supported calculation-group extraction;
-- serialization;
-- JSON Schema validation.
-
-### Negative Tests
-
-- missing input;
-- invalid Semantic Model structure;
-- unresolved relationship;
-- invalid relationship endpoint;
-- malformed source metadata;
-- serialization failure where practical.
-
-### Regression Tests
-
-The implementation MUST verify that supported behavior does not regress when
-the integration implementation changes.
-
----
-
-## 22. Dependency Boundary
-
-Phase 07 MAY introduce parser-specific dependencies required for deterministic
-Semantic Model parsing.
-
-Dependencies MUST be:
-
-- explicitly declared;
-- necessary for the implementation;
-- isolated from unrelated BIOrch capabilities where practical.
-
-No dependency may be introduced solely for LLM-based interpretation.
-
----
-
-## 23. Security Boundary
-
-The V1 parser is a metadata extraction capability.
-
-It MUST NOT:
-
-- execute DAX;
-- execute M;
-- execute arbitrary source queries;
-- make external network requests as part of normal parsing;
-- access Power BI credentials;
-- authenticate against Power BI Service.
-
-Source expressions are data, not executable instructions.
-
----
-
-## 24. V1 Completion Criteria
-
-Phase 07 may be considered implementation-complete only when:
-
-1. A Semantic Model can be loaded successfully.
-2. Supported semantic entities are converted into BIOrch canonical metadata.
-3. Relationships are resolved and validated.
-4. Unexpected unresolved relationships fail validation.
-5. Supported provenance is preserved.
-6. DAX/M expressions are preserved without execution.
-7. Output is deterministic.
-8. Output validates against the Phase 07 JSON Schema.
-9. The AdventureWorks reference fixture passes the complete pipeline.
-10. Tests provide evidence for both successful and failure paths.
-11. The Power BI Agent boundary remains separate from parser implementation.
-12. No Report/PBIR functionality is required for V1.
-
----
-
-## 25. Explicit V1 Non-Goals
-
-The following MUST NOT be added merely to increase Phase 07 scope:
-
-- Report parsing;
-- visual parsing;
-- PBIR integration;
-- Power BI Service integration;
-- Fabric integration;
-- query execution;
-- DAX execution;
-- M execution;
-- LLM-based metadata interpretation;
-- automatic repair of malformed Semantic Models.
-
-Such capabilities require separate design decisions and contract revisions.
-
----
-
-## 26. Architectural Principle
-
-The Power BI parser is an implementation detail.
-
-The BIOrch canonical metadata contract is the stable boundary.
+- authoritative package source
+- exact package version
+- dependency declaration
+- reproducible installation mechanism
+- verified runtime compatibility
 
 Therefore:
 
-    Power BI source format
-            ↓
-       Parser
-            ↓
-       Adapter
-            ↓
-    BIOrch canonical model
-            ↓
-       Validation
-            ↓
-       Serialization
+1. The historical parser MUST NOT be treated as a runtime dependency.
+2. The historical parser MUST NOT be silently substituted with an unrelated
+   package having the same or similar package name.
+3. The historical parser artifact MUST be preserved as reference evidence
+   unless a future governed decision explicitly changes that status.
+4. The historical parser MAY be used for source-level comparison if it is
+   available.
+5. Phase 07 runtime correctness MUST NOT depend on successful execution of
+   the historical parser.
 
-must remain separable.
-
-This permits future replacement or improvement of the underlying parser without
-requiring a redesign of the BIOrch Agent architecture.
+The inability to reproduce the historical parser does not invalidate the
+Power BI integration contract.
 
 ---
 
-## 27. Contract Status
+# 6. Parser Architecture Boundary
 
-This document defines the proposed Phase 07 V1 architecture and behavioral
-boundary.
+BIOrch MUST isolate parser-specific behavior behind a Power BI parser
+adapter boundary.
 
-Implementation MUST NOT begin until the contract has been reviewed and
-approved.
+The parser implementation MUST:
 
-Any implementation requirement that conflicts with this contract MUST be
-resolved through an explicit contract revision rather than silently changing
-the implementation scope.
+- operate deterministically;
+- operate without an LLM;
+- operate without network access during normal parsing;
+- consume local semantic-model metadata;
+- expose sufficient information for canonicalization;
+- have explicitly declared dependencies;
+- be reproducible in the supported BIOrch runtime;
+- avoid exposing parser-specific objects beyond the adapter boundary.
+
+The Phase 07 contract intentionally DOES NOT mandate a particular parser
+library.
+
+Parser selection is an implementation architecture decision that MUST be
+made and documented before production implementation is considered complete.
+
+A parser MUST NOT be selected solely because:
+
+- a similarly named package exists;
+- it is installable from PyPI;
+- it happens to import successfully;
+- it provides only a subset of the required metadata.
+
+Parser selection MUST be based on demonstrated compatibility with the
+Phase 07 requirements and the supported runtime.
+
+---
+
+# 7. Dependency Policy
+
+All runtime parser dependencies MUST be:
+
+1. explicitly declared;
+2. reproducible;
+3. deterministically version-constrained;
+4. compatible with the supported BIOrch runtime;
+5. installable through the project's documented dependency mechanism;
+6. testable in a clean environment.
+
+The implementation MUST NOT rely on an undeclared package existing in the
+developer's local environment.
+
+A dependency that cannot be reproduced from repository configuration MUST
+NOT be considered a valid production runtime dependency.
+
+The final selected parser dependency and its version/source MUST be recorded
+by the implementation/governance artifacts before Phase 07 closure.
+
+---
+
+# 8. Canonical Model Boundary
+
+The canonical model is the stable BIOrch representation.
+
+Parser-specific classes MUST NOT become the BIOrch canonical model.
+
+The canonical model MUST be capable of representing the following logical
+entities:
+
+- Model
+- Table
+- Column
+- CalculatedColumn
+- Measure
+- Relationship
+- Hierarchy
+- HierarchyLevel
+- Partition
+- CalculationGroup
+- CalculationItem
+- Annotation
+- SourceEvidence
+- UnresolvedMetadata
+
+The exact Python class structure is an implementation decision, but the
+serialized contract MUST preserve the semantic distinctions above.
+
+---
+
+# 9. Model Metadata
+
+The canonical model MUST provide a model-level identity and MUST provide
+model metadata when such metadata exists in the source.
+
+Model metadata MUST NOT be fabricated when unavailable.
+
+Unavailable model metadata MUST be represented according to the unresolved
+metadata policy defined by this contract.
+
+---
+
+# 10. Table Requirements
+
+A canonical Table SHOULD include, where available:
+
+- canonical identity
+- source identity
+- table name
+- hidden state
+- source/provenance information
+- annotations
+- lineage metadata
+- associated partitions
+- associated hierarchies
+
+Table identity MUST be deterministic.
+
+---
+
+# 11. Column Requirements
+
+A canonical Column SHOULD include, where available:
+
+- canonical identity
+- source identity
+- table identity
+- column name
+- data type
+- source column
+- hidden state
+- display folder
+- summarization behavior
+- format information
+- lineage metadata
+- annotations
+- calculated-column expression where applicable
+- provenance
+
+Column references MUST resolve to an existing canonical table.
+
+---
+
+# 12. Measure Requirements
+
+A canonical Measure SHOULD include, where available:
+
+- canonical identity
+- source identity
+- table identity
+- measure name
+- DAX expression
+- format string
+- display folder
+- hidden state
+- annotations
+- lineage metadata
+- provenance
+
+DAX MUST be preserved as metadata text.
+
+DAX MUST NOT be executed by the Phase 07 extraction pipeline.
+
+---
+
+# 13. Calculated Column Requirements
+
+Calculated columns MUST be represented distinctly from ordinary columns
+when the source model identifies them as calculated columns.
+
+Their expression MUST be preserved as metadata text where available.
+
+Expressions MUST NOT be executed during parsing or canonicalization.
+
+---
+
+# 14. Relationship Requirements
+
+Relationships MUST be represented explicitly.
+
+Where available, a canonical Relationship SHOULD preserve:
+
+- canonical relationship identity
+- source relationship identity
+- from-table identity
+- from-column identity
+- to-table identity
+- to-column identity
+- cardinality
+- active/inactive state
+- cross-filter direction
+- provenance
+
+Relationship endpoints MUST resolve to existing canonical entities.
+
+The validator MUST detect unresolved relationship endpoints.
+
+The implementation MUST NOT fabricate a relationship merely to satisfy
+referential integrity.
+
+---
+
+# 15. Hierarchy Requirements
+
+Where the source model contains hierarchies, the canonical model MUST
+provide a representation for:
+
+- hierarchy identity
+- owning table
+- hierarchy name
+- hierarchy levels
+- level ordering
+- referenced columns
+- provenance
+
+Hierarchy references MUST resolve to valid canonical columns.
+
+If a parser cannot extract a hierarchy, the implementation MUST NOT silently
+discard it.
+
+It MUST instead classify the construct according to the unresolved metadata
+policy.
+
+---
+
+# 16. Partition and M Requirements
+
+Where partitions are present, the canonical model MUST provide a partition
+representation capable of preserving:
+
+- partition identity
+- owning table
+- source information
+- storage/source type where available
+- M expression text where available
+- provenance
+
+M expressions MUST be treated as metadata.
+
+M expressions MUST NOT be executed by Phase 07.
+
+If M metadata cannot be parsed, it MUST NOT be fabricated or silently
+discarded.
+
+---
+
+# 17. Calculation Groups
+
+Where calculation groups are present, the canonical model MUST provide
+representations for:
+
+- calculation group identity
+- owning table/object
+- calculation items
+- calculation item identity
+- calculation item expression
+- ordering metadata where available
+- annotations
+- provenance
+
+Calculation-item expressions MUST be preserved as metadata and MUST NOT be
+executed.
+
+---
+
+# 18. Annotations and Lineage
+
+The implementation SHOULD preserve source annotations and lineage metadata
+when exposed by the source format and parser.
+
+Lineage metadata MUST remain distinct from BIOrch canonical identity.
+
+A source `lineageTag` MUST NOT automatically become the BIOrch canonical ID.
+
+---
+
+# 19. Identity Architecture
+
+Phase 07 MUST maintain a strict distinction between:
+
+1. Source Identity
+2. Canonical Identity
+3. Lineage Identity/Metadata
+
+## 19.1 Source Identity
+
+Represents identity supplied by Power BI/TMDL or the parser.
+
+## 19.2 Canonical Identity
+
+Represents the stable BIOrch identity.
+
+Canonical identities MUST:
+
+- be deterministic;
+- be stable for the same semantic object;
+- not depend on object traversal order;
+- not depend on memory addresses;
+- not depend on parser object identity.
+
+## 19.3 Lineage
+
+Lineage metadata describes source-system lineage information.
+
+It MUST NOT be conflated with canonical identity.
+
+---
+
+# 20. Provenance Architecture
+
+Every canonical entity SHOULD carry provenance when source evidence is
+available.
+
+Provenance SHOULD distinguish:
+
+- source type
+- source file
+- source object
+- source location/range where available
+- parser/source evidence
+
+The implementation MUST NOT fabricate line numbers, columns, ranges,
+identifiers, or source evidence.
+
+If precise source location is unavailable, provenance MUST explicitly indicate
+that the location is unavailable rather than inventing one.
+
+Provenance generation MUST be deterministic.
+
+---
+
+# 21. Unsupported and Unresolved Metadata Policy
+
+The implementation MUST NOT silently discard semantic metadata solely
+because the selected parser or adapter cannot currently represent it.
+
+The architecture MUST distinguish between:
+
+- SUPPORTED
+- UNSUPPORTED
+- UNRESOLVED
+- UNAVAILABLE
+- INVALID
+
+Where metadata is encountered but cannot be represented, the implementation
+MUST preserve sufficient information to identify the unresolved construct
+when technically possible.
+
+The implementation MUST NOT fabricate semantic metadata to fill gaps.
+
+The exact warning/failure policy for individual unsupported constructs MUST
+be defined before implementation closure.
+
+At minimum:
+
+- structurally required metadata MUST cause validation failure when absent
+  or invalid;
+- optional unsupported metadata MUST be explicitly classified;
+- silently dropping discovered semantic constructs is prohibited.
+
+---
+
+# 22. Validation Architecture
+
+Validation MUST occur after canonicalization.
+
+Validation MUST be deterministic.
+
+At minimum, validation MUST cover:
+
+## Identity
+
+- duplicate canonical IDs
+- invalid canonical IDs
+- inconsistent source/canonical identity mapping
+
+## References
+
+- unresolved table references
+- unresolved column references
+- unresolved relationship endpoints
+- unresolved hierarchy references
+- unresolved partition/table references
+- unresolved calculation-group references
+
+## Structure
+
+- malformed canonical entities
+- missing required fields
+- invalid relationship structure
+- invalid hierarchy structure
+- invalid partition ownership
+- invalid calculation-group structure
+
+## Provenance
+
+- malformed provenance
+- fabricated/invalid source references where detectable
+
+## Serialization
+
+- deterministic output
+- schema compliance
+
+---
+
+# 23. Determinism
+
+For identical semantic-model input and identical parser implementation/version,
+Phase 07 MUST produce equivalent canonical output.
+
+Output MUST NOT depend on:
+
+- dictionary iteration accidents;
+- filesystem traversal order;
+- process memory addresses;
+- timestamps;
+- random identifiers;
+- network responses.
+
+Collections MUST have deterministic ordering where ordering is not
+semantically defined by the source.
+
+---
+
+# 24. Serialization
+
+Phase 07 MUST provide deterministic machine-readable serialization.
+
+JSON is the Phase 07 external serialization format.
+
+Serialization MUST:
+
+- represent the canonical model;
+- preserve required metadata;
+- preserve unresolved/unsupported classifications;
+- be deterministic;
+- validate against the Phase 07 JSON Schema.
+
+Serializer output MUST NOT expose parser-specific implementation objects.
+
+---
+
+# 25. JSON Schema
+
+The file:
+
+    schemas/phase07_metadata.schema.json
+
+defines the externally consumable Phase 07 metadata representation.
+
+The schema MUST evolve together with the canonical model.
+
+Any implementation change that alters the externally represented canonical
+model MUST update the schema in the same governed change.
+
+The schema MUST NOT be reduced merely to accommodate implementation
+limitations.
+
+---
+
+# 26. Security Boundary
+
+Phase 07 is a metadata extraction capability.
+
+The parser and canonicalization pipeline MUST NOT:
+
+- require an LLM;
+- execute DAX;
+- execute M;
+- execute arbitrary model expressions;
+- make external network requests as part of normal parsing;
+- execute Power BI report content;
+- execute arbitrary code contained within model metadata.
+
+DAX and M are data to be extracted/preserved, not instructions to execute.
+
+---
+
+# 27. Testing Requirements
+
+Phase 07 MUST include automated tests covering at least:
+
+## Positive Tests
+
+- valid AdventureWorks semantic model
+- tables
+- columns
+- measures
+- calculated columns
+- relationships
+- available advanced metadata
+
+## Negative Tests
+
+- missing semantic-model directory
+- malformed TMDL
+- missing required metadata
+- duplicate canonical identities
+- unresolved references
+- invalid relationship endpoints
+- invalid hierarchy references
+- malformed serialization input
+
+## Identity Tests
+
+- deterministic identity generation
+- source/canonical identity separation
+- repeatability
+
+## Provenance Tests
+
+- source file preservation
+- provenance propagation
+- absence of fabricated locations
+
+## Serialization Tests
+
+- deterministic JSON
+- JSON Schema validation
+- invalid-model rejection
+
+## Regression Tests
+
+Existing BIOrch functionality, particularly Phase 06 Tableau integration,
+MUST remain protected.
+
+---
+
+# 28. Reference Fixture
+
+The AdventureWorks Sales semantic model is the primary Phase 07 reference
+fixture.
+
+The fixture MUST be treated as test evidence.
+
+The fixture MUST NOT be modified merely to make the implementation pass.
+
+Additional fixtures MAY be introduced when the primary fixture does not
+exercise a contract requirement.
+
+Advanced features that are absent from the primary fixture MUST be tested
+with dedicated fixtures before claiming full coverage.
+
+---
+
+# 29. Parser Selection Decision
+
+A parser implementation MUST be selected through a governed implementation
+decision.
+
+The decision MUST document:
+
+- parser name
+- source repository/project
+- exact version
+- license/reuse basis where relevant
+- supported runtime
+- installation mechanism
+- dependency declarations
+- tested TMDL capabilities
+- known unsupported constructs
+- AdventureWorks test results
+- reproducibility evidence
+
+The historical `tmdlparser` import MUST NOT be assumed to identify the
+correct implementation.
+
+A package with the same name MUST NOT be accepted as the historical baseline
+without provenance evidence.
+
+---
+
+# 30. Implementation Boundary
+
+The implementation SHOULD maintain the following logical separation:
+
+    parser/
+        Parser-specific parsing
+
+    adapter/
+        Parser-to-BIOrch boundary
+
+    canonicalizer/
+        Canonical BIOrch mapping
+
+    entities/
+        Canonical data structures
+
+    validator/
+        Structural validation
+
+    serializer/
+        External representation
+
+Parser-specific implementation details MUST NOT leak into the canonical
+entity contract.
+
+---
+
+# 31. Phase 07 Acceptance Criteria
+
+Phase 07 MUST NOT be considered complete until all of the following are true:
+
+1. A reproducible parser implementation has been selected and documented.
+
+2. All runtime parser dependencies are explicitly declared and
+   reproducible.
+
+3. The historical parser baseline is no longer required for runtime
+   execution.
+
+4. The AdventureWorks semantic model can be processed successfully.
+
+5. Canonical identities are deterministic.
+
+6. Source identity and canonical identity remain distinct.
+
+7. Provenance is propagated without fabrication.
+
+8. Relationships are represented and validated.
+
+9. Supported advanced metadata is represented.
+
+10. Unsupported/unresolved metadata is explicitly classified.
+
+11. No semantic metadata is silently fabricated or silently discarded.
+
+12. Deterministic JSON serialization is implemented.
+
+13. Serialized output validates against `phase07_metadata.schema.json`.
+
+14. Positive and negative tests are present.
+
+15. Identity and provenance tests are present.
+
+16. Existing Phase 06 regression protection remains intact.
+
+17. The implementation performs no DAX/M execution.
+
+18. The implementation requires no LLM or network access for normal parsing.
+
+19. A clean-environment reproduction test succeeds.
+
+20. The implementation, task response, validation evidence, and review
+    artifacts are consistent with this contract.
+
+---
+
+# 32. Phase 07 Non-Goals
+
+Phase 07 does NOT include:
+
+- Power BI report/visual parsing;
+- report layout analysis;
+- visual lineage;
+- DAX execution;
+- M execution;
+- automatic metadata repair;
+- semantic-model modification;
+- report modification;
+- LLM-based semantic interpretation;
+- network-dependent parsing.
+
+These capabilities require future governed work if introduced.
+
+---
+
+# 33. Governance Relationship
+
+This contract is the authoritative architectural requirement for Phase 07.
+
+The governance hierarchy is:
+
+    POWERBI_AGENT_CONTRACT.md
+                |
+                v
+             TASK.md
+                |
+                v
+          Implementation
+                |
+                v
+           RESPONSE.md
+                |
+                v
+            REVIEW.md
+                |
+                v
+         Phase Closure
+
+`TASK.md` MUST NOT redefine or weaken this contract.
+
+If implementation discovers a requirement conflict, implementation MUST stop
+and the contract MUST be reviewed through the governance process.
+
+Implementation MUST NOT silently reinterpret the contract.
+
+---
+
+# 34. Required Pre-Implementation Decisions
+
+Before implementation begins, the following decisions MUST be resolved:
+
+1. Parser implementation selection.
+2. Parser dependency/version strategy.
+3. Unsupported/unresolved metadata policy.
+4. Canonical identity algorithm.
+5. Provenance representation.
+6. Canonical model entity structure.
+7. JSON Schema representation.
+8. Required advanced-metadata coverage for Phase 07 closure.
+
+These decisions MUST be documented in the Phase 07 implementation/governance
+evidence.
+
+---
+
+# 35. Change Control
+
+Any change to this contract after implementation begins MUST be treated as
+a governed architecture change.
+
+The implementation MUST NOT modify the contract merely to make an existing
+implementation pass validation.
+
+Contract changes MUST include:
+
+- reason for change;
+- affected requirements;
+- impact on implementation;
+- impact on tests;
+- impact on schema;
+- impact on Phase 07 acceptance criteria.
+
+---
+
+# 36. Final Architectural Principle
+
+The central architectural principle of Phase 07 is:
+
+    The parser is replaceable.
+    The BIOrch canonical contract is not.
+
+The historical parser is evidence.
+
+The selected parser is an implementation dependency.
+
+The BIOrch canonical model is the stable integration boundary.
+
+No parser-specific limitation may silently redefine the BIOrch semantic
+model.
+
+---
+
+**PHASE_07_POWERBI_AGENT_CONTRACT_V2_AUTHORITATIVE**

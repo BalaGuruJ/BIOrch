@@ -9,7 +9,9 @@
         "properties": {
           "id": {"type": "string"},
           "name": {"type": "string"},
-          "annotations": {"type": "array", "items": {"type": "object", "properties": {"name": {"type": "string"}, "value": {"type": "string"}}}}
+          "annotations": {"type": "array", "items": {"type": "object", "properties": {"name": {"type": "string"}, "value": {"type": "string"}}}},
+          "lineage_metadata": {"type": ["string", "null"]},
+          "provenance": {"type": ["object", "null"], "properties": {"source_type": {"type": "string"}, "expression": {"type": ["string", "null"]}}}
         },
         "required": ["id", "name"]
       }
@@ -25,7 +27,9 @@
           "data_type": {"type": "string"},
           "is_calculated": {"type": "boolean"},
           "expression": {"type": ["string", "null"]},
-          "annotations": {"type": "array", "items": {"type": "object", "properties": {"name": {"type": "string"}, "value": {"type": "string"}}}}
+          "annotations": {"type": "array", "items": {"type": "object", "properties": {"name": {"type": "string"}, "value": {"type": "string"}}}},
+          "lineage_metadata": {"type": ["string", "null"]},
+          "provenance": {"type": ["object", "null"], "properties": {"source_type": {"type": "string"}, "expression": {"type": ["string", "null"]}}}
         },
         "required": ["id", "name", "table_id", "data_type", "is_calculated"]
       }
@@ -39,7 +43,9 @@
           "name": {"type": "string"},
           "table_id": {"type": "string"},
           "expression": {"type": "string"},
-          "annotations": {"type": "array", "items": {"type": "object", "properties": {"name": {"type": "string"}, "value": {"type": "string"}}}}
+          "annotations": {"type": "array", "items": {"type": "object", "properties": {"name": {"type": "string"}, "value": {"type": "string"}}}},
+          "lineage_metadata": {"type": ["string", "null"]},
+          "provenance": {"type": ["object", "null"], "properties": {"source_type": {"type": "string"}, "expression": {"type": ["string", "null"]}}}
         },
         "required": ["id", "name", "table_id", "expression"]
       }
@@ -57,7 +63,9 @@
           "is_active": {"type": "boolean"},
           "cardinality": {"type": "string"},
           "cross_filter_direction": {"type": "string"},
-          "annotations": {"type": "array", "items": {"type": "object", "properties": {"name": {"type": "string"}, "value": {"type": "string"}}}}
+          "annotations": {"type": "array", "items": {"type": "object", "properties": {"name": {"type": "string"}, "value": {"type": "string"}}}},
+          "lineage_metadata": {"type": ["string", "null"]},
+          "provenance": {"type": ["object", "null"], "properties": {"source_type": {"type": "string"}, "expression": {"type": ["string", "null"]}}}
         },
         "required": ["id", "from_column_id", "to_column_id", "from_table_id", "to_table_id"]
       }

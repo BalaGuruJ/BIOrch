@@ -6,15 +6,27 @@ def serialize(model: PowerBICanonicalModel) -> str:
         return [{"name": a.name, "value": a.value} for a in anns]
     
     data = {
-        "tables": [{"id": t.id, "name": t.name, "annotations": ann_to_dict(t.annotations)} for t in model.tables],
+        "tables": [
+            {
+                "id": t.id, "name": t.name, "annotations": ann_to_dict(t.annotations),
+                "lineage_metadata": t.lineage_metadata,
+                "provenance": {"source_type": t.provenance.source_type, "expression": t.provenance.expression} if t.provenance else None
+            } for t in model.tables
+        ],
         "columns": [
             {
                 "id": c.id, "name": c.name, "table_id": c.table_id, "data_type": c.data_type,
-                "is_calculated": c.is_calculated, "expression": c.expression, "annotations": ann_to_dict(c.annotations)
+                "is_calculated": c.is_calculated, "expression": c.expression, "annotations": ann_to_dict(c.annotations),
+                "lineage_metadata": c.lineage_metadata,
+                "provenance": {"source_type": c.provenance.source_type, "expression": c.provenance.expression} if c.provenance else None
             } for c in model.columns
         ],
         "measures": [
-            {"id": m.id, "name": m.name, "table_id": m.table_id, "expression": m.expression, "annotations": ann_to_dict(m.annotations)}
+            {
+                "id": m.id, "name": m.name, "table_id": m.table_id, "expression": m.expression, "annotations": ann_to_dict(m.annotations),
+                "lineage_metadata": m.lineage_metadata,
+                "provenance": {"source_type": m.provenance.source_type, "expression": m.provenance.expression} if m.provenance else None
+            }
             for m in model.measures
         ],
         "relationships": [
@@ -22,7 +34,9 @@ def serialize(model: PowerBICanonicalModel) -> str:
                 "id": r.id, "from_table_id": r.from_table_id, "from_column_id": r.from_column_id,
                 "to_table_id": r.to_table_id, "to_column_id": r.to_column_id, "is_active": r.is_active,
                 "cardinality": r.cardinality.name, "cross_filter_direction": r.cross_filter_direction.name,
-                "annotations": ann_to_dict(r.annotations)
+                "annotations": ann_to_dict(r.annotations),
+                "lineage_metadata": r.lineage_metadata,
+                "provenance": {"source_type": r.provenance.source_type, "expression": r.provenance.expression} if r.provenance else None
             } for r in model.relationships
         ],
         "partitions": [

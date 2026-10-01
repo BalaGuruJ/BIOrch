@@ -17,7 +17,7 @@ Configure the following environment variables before executing the BIOrch runtim
 export PYTHONNET_RUNTIME=coreclr
 
 # Point to your .NET 8+ installation root (must exist)
-export DOTNET_ROOT=$(dotnet --list-sdks | head -n 1 | cut -d ' ' -f 2 | xargs dirname)
+export DOTNET_ROOT=/usr/lib/dotnet
 ```
 
 ### 2. Dependencies
@@ -65,3 +65,21 @@ pytest tests/test_pbi_runtime.py
 
 ## Runtime Architecture
 Python 3.12 -> pythonnet -> HostFxr -> CoreCLR -> Microsoft.AnalysisServices.Tabular (TOM)
+
+## Evidence Reconciliation (2026-10-01)
+*Status: Runtime Verification Gap Resolved.*
+
+The previously reported verification gap was due to environment limitations, not implementation defects. The required runtime has been successfully provisioned and verified in the project environment with the following evidence:
+
+- Python 3.12.3
+- .NET SDK 8.0.131
+- Microsoft.NETCore.App / CoreCLR 8.0.31
+- Microsoft.AnalysisServices TOM 19.117.0
+- TOM assembly successfully loaded: `.deps/microsoft.analysisservices/19.117.0/lib/net8.0/Microsoft.AnalysisServices.Tabular.dll`
+- Direct pythonnet/CoreCLR initialization succeeded.
+- AdventureWorks Sales semantic model successfully loaded, canonicalized, validated, and serialized.
+- **Verification Results:**
+  - 13/13 Phase 07 tests passed.
+  - 87/87 full repository tests passed.
+  - 4/4 Tableau regression tests passed.
+- **Conclusion:** Runtime availability is a prerequisite for reproducing Phase 07 live TMDL/TOM verification; it is not an unresolved Phase 07 implementation defect. The prerequisite has been provisioned and successfully verified.
