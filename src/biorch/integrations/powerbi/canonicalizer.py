@@ -14,7 +14,7 @@ def _deterministic_id(parent_id: str, name: str) -> str:
 def _map_annotations(tom_obj) -> tuple[CanonicalAnnotation, ...]:
     if not hasattr(tom_obj, 'Annotations'):
         return ()
-    return tuple(CanonicalAnnotation(name=a.Name, value=a.Value) for a in tom_obj.Annotations)
+    return tuple(CanonicalAnnotation(name=a.Name, value=a.Value) for a in sorted(tom_obj.Annotations, key=lambda a: a.Name))
 
 def _map_cardinality(tom_card) -> Cardinality:
     s = str(tom_card)
@@ -40,14 +40,15 @@ def canonicalize(parsed_model) -> PowerBICanonicalModel:
     hierarchies = []
     calculation_groups = []
     
-    for table in parsed_model.Model.Tables:
+    for table in sorted(parsed_model.Model.Tables, key=lambda t: t.Name):
         table_id = _deterministic_id(model_id, table.Name)
         tables.append(CanonicalTable(
             id=table_id, name=table.Name, 
-            annotations=_map_annotations(table)
+            annotations=_map_annotations(table),
+            lineage_metadata=getattr(table, 'LineageTag', None)
         ))
         
-        for col in table.Columns:
+        for col in sorted(table.Columns, key=lambda c: c.Name):
             is_calc = (str(col.Type) == "Calculated")
             columns.append(CanonicalColumn(
                 id=_deterministic_id(table_id, col.Name),
@@ -56,19 +57,21 @@ def canonicalize(parsed_model) -> PowerBICanonicalModel:
                 data_type=str(col.DataType) if hasattr(col, 'DataType') else "Unknown",
                 is_calculated=is_calc,
                 expression=col.Expression if is_calc else None,
-                annotations=_map_annotations(col)
+                annotations=_map_annotations(col),
+                lineage_metadata=getattr(col, 'LineageTag', None)
             ))
             
-        for measure in table.Measures:
+        for measure in sorted(table.Measures, key=lambda m: m.Name):
             measures.append(CanonicalMeasure(
                 id=_deterministic_id(table_id, measure.Name),
                 name=measure.Name,
                 table_id=table_id,
                 expression=measure.Expression,
-                annotations=_map_annotations(measure)
+                annotations=_map_annotations(measure),
+                lineage_metadata=getattr(measure, 'LineageTag', None)
             ))
             
-        for part in table.Partitions:
+        for part in sorted(table.Partitions, key=lambda p: p.Name):
             source_evidence = None
             provenance = ProvenanceType.SUPPORTED
             
@@ -76,7 +79,13 @@ def canonicalize(parsed_model) -> PowerBICanonicalModel:
                 try:
                     src_type = str(part.SourceType)
                     src_expr = getattr(part.Source, 'Expression', None)
-                    source_evidence = SourceEvidence(source_type=src_type, expression=src_expr)
+                    source_evidence = SourceEvidence(
+                        source_file="Unknown",
+                        source_structure=part.Name,
+                        source_locator=src_expr or "N/A",
+                        source_attributes={"source_type": src_type},
+                        evidence_type=EvidenceType.SEMANTIC_MODEL
+                    )
                 except Exception:
                     provenance = ProvenanceType.UNRESOLVED
             else:
@@ -90,10 +99,12 @@ def canonicalize(parsed_model) -> PowerBICanonicalModel:
                 provenance_type=provenance
             ))
 
-        for hier in table.Hierarchies:
+        for hier in sorted(table.Hierarchies, key=lambda h: h.Name):
             hier_id = _deterministic_id(table_id, hier.Name)
             levels = []
-            for i, level in enumerate(hier.Levels):
+            # Sort levels by Ordinal
+            sorted_levels = sorted(hier.Levels, key=lambda l: l.Ordinal)
+            for i, level in enumerate(sorted_levels):
                 levels.append(CanonicalHierarchyLevel(
                     id=_deterministic_id(hier_id, level.Name),
                     hierarchy_id=hier_id,
@@ -108,25 +119,38 @@ def canonicalize(parsed_model) -> PowerBICanonicalModel:
                 annotations=_map_annotations(hier)
             ))
 
+    raw_calc_groups = []
+    for table in sorted(parsed_model.Model.Tables, key=lambda t: t.Name):
+        cg = getattr(table, 'CalculationGroup', None)
+        if cg is not None:
+            cg_name = getattr(cg, 'Name', None) or table.Name
+            raw_calc_groups.append((cg_name, cg.CalculationItems))
+
     if hasattr(parsed_model.Model, 'CalculationGroups'):
-        for calc_group in parsed_model.Model.CalculationGroups:
-            cg_id = _deterministic_id(model_id, calc_group.Name)
-            items = []
-            for i, item in enumerate(calc_group.CalculationItems):
-                items.append(CanonicalCalculationItem(
-                    id=_deterministic_id(cg_id, item.Name),
-                    calculation_group_id=cg_id,
-                    name=item.Name,
-                    expression=item.Expression,
-                    ordinal=i
-                ))
-            calculation_groups.append(CanonicalCalculationGroup(
-                id=cg_id,
-                name=calc_group.Name,
-                items=tuple(items)
+        for calc_group in sorted(parsed_model.Model.CalculationGroups, key=lambda cg: cg.Name):
+            if not any(cg_name == calc_group.Name for cg_name, _ in raw_calc_groups):
+                raw_calc_groups.append((calc_group.Name, calc_group.CalculationItems))
+
+    for cg_name, calc_items in sorted(raw_calc_groups, key=lambda x: x[0]):
+        cg_id = _deterministic_id(model_id, cg_name)
+        items = []
+        # Sort items by Ordinal
+        sorted_items = sorted(calc_items, key=lambda ci: ci.Ordinal)
+        for i, item in enumerate(sorted_items):
+            items.append(CanonicalCalculationItem(
+                id=_deterministic_id(cg_id, item.Name),
+                calculation_group_id=cg_id,
+                name=item.Name,
+                expression=item.Expression,
+                ordinal=i
             ))
+        calculation_groups.append(CanonicalCalculationGroup(
+            id=cg_id,
+            name=cg_name,
+            items=tuple(items)
+        ))
     
-    for rel in parsed_model.Model.Relationships:
+    for rel in sorted(parsed_model.Model.Relationships, key=lambda r: _deterministic_id(model_id, f"{r.FromTable.Name}:{r.FromColumn.Name}->{r.ToTable.Name}:{r.ToColumn.Name}")):
         from_table = rel.FromTable.Name
         to_table = rel.ToTable.Name
         from_col = rel.FromColumn.Name
@@ -144,7 +168,8 @@ def canonicalize(parsed_model) -> PowerBICanonicalModel:
             is_active=rel.IsActive,
             cardinality=_map_cardinality(rel.FromCardinality),
             cross_filter_direction=_map_cross_filter(rel.CrossFilteringBehavior),
-            annotations=_map_annotations(rel)
+            annotations=_map_annotations(rel),
+            lineage_metadata=getattr(rel, 'LineageTag', None)
         ))
     
     return PowerBICanonicalModel(

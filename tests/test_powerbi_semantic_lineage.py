@@ -43,4 +43,4 @@ def test_semantic_lineage_traversal():
     # 6. Partition -> SourceEvidence
     for part in canonical_model.partitions:
         if part.source_evidence:
-            assert part.source_evidence.source_type is not None
+            assert part.source_evidence.source_attributes["source_type"] is not None

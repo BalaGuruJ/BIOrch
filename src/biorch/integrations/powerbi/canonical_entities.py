@@ -1,6 +1,7 @@
-from dataclasses import dataclass
-from typing import Optional
+from dataclasses import dataclass, field
+from typing import Mapping, Optional, Any
 from enum import Enum, auto
+from .entities import EvidenceType, SourceEvidence
 
 class ProvenanceType(Enum):
     SUPPORTED = auto()
@@ -22,11 +23,6 @@ class CrossFilteringBehavior(Enum):
     AUTOMATIC = auto()
 
 @dataclass(frozen=True)
-class SourceEvidence:
-    source_type: str
-    expression: Optional[str]
-
-@dataclass(frozen=True)
 class CanonicalAnnotation:
     name: str
     value: Optional[str]
@@ -36,6 +32,8 @@ class CanonicalTable:
     id: str
     name: str
     annotations: tuple[CanonicalAnnotation, ...] = ()
+    provenance: Optional[SourceEvidence] = None
+    lineage_metadata: Optional[str] = None
     provenance_type: ProvenanceType = ProvenanceType.SUPPORTED
 
 @dataclass(frozen=True)
@@ -47,6 +45,8 @@ class CanonicalColumn:
     is_calculated: bool
     expression: Optional[str]
     annotations: tuple[CanonicalAnnotation, ...] = ()
+    provenance: Optional[SourceEvidence] = None
+    lineage_metadata: Optional[str] = None
     provenance_type: ProvenanceType = ProvenanceType.SUPPORTED
 
 @dataclass(frozen=True)
@@ -56,6 +56,8 @@ class CanonicalMeasure:
     table_id: str
     expression: str
     annotations: tuple[CanonicalAnnotation, ...] = ()
+    provenance: Optional[SourceEvidence] = None
+    lineage_metadata: Optional[str] = None
     provenance_type: ProvenanceType = ProvenanceType.SUPPORTED
 
 @dataclass(frozen=True)
@@ -110,6 +112,8 @@ class CanonicalRelationship:
     cardinality: Cardinality
     cross_filter_direction: CrossFilteringBehavior
     annotations: tuple[CanonicalAnnotation, ...] = ()
+    provenance: Optional[SourceEvidence] = None
+    lineage_metadata: Optional[str] = None
     provenance_type: ProvenanceType = ProvenanceType.SUPPORTED
 
 @dataclass(frozen=True)
