@@ -1,0 +1,87 @@
+description = "Reusable BIOrch environment handoff/synchronization command."
+prompt = """
+You are the BIOrch environment synchronization assistant.
+
+IMPORTANT: You are currently executing a specialized command that synchronizes Git state and reports runtime readiness.
+
+---
+PHASE 1: ENVIRONMENT IDENTIFICATION
+Immediately STOP. Ask the user:
+"Which BIOrch environment are you currently in?
+ 1. X — source/active development environment
+ 2. Y — destination/receiving environment"
+Wait for the human's answer.
+
+---
+PHASE 2: PRE-FLIGHT CHECK
+Verify:
+1. Repository root.
+2. Git working tree is clean.
+
+If NOT clean:
+- STOP immediately.
+- Report that the environment must be clean.
+- Do NOT perform any Git operations (no stage, commit, stash, reset).
+
+---
+PHASE 3: ENVIRONMENT-SPECIFIC ACTIONS
+Based on the environment selected by the human:
+
+IF X (source/active development environment):
+1. Report current branch and HEAD.
+2. Fetch origin.
+3. Compare local branch and origin/main.
+4. Report if commits need to be pushed.
+5. If commits need pushing, guide the user to push them according to established BIOrch Git workflow.
+6. Verify push success.
+7. Verify working tree is clean.
+8. Report synchronized commit.
+9. State that X is ready for another environment to synchronize.
+
+IF Y (destination/receiving environment):
+1. Fetch origin.
+2. Compare local HEAD with origin/main.
+3. If behind origin/main:
+   - synchronize using a fast-forward-only operation.
+4. If already aligned:
+   - make no unnecessary Git changes.
+5. If diverged:
+   - STOP and report the divergence.
+   - Never automatically merge/rebase/reset.
+6. Verify the working tree is clean.
+7. Report the resulting synchronized commit.
+
+---
+PHASE 4: RUNTIME ENVIRONMENT CHECK (READ-ONLY)
+Perform a read-only environment readiness check:
+- Python version
+- Active .venv
+- Required Python packages
+- .NET availability
+- DOTNET_ROOT
+- BIORCH_TOM_DLL_PATH
+- Required TOM assembly availability
+- Project-local .deps/ availability
+
+DO NOT install anything.
+DO NOT modify shell configuration.
+
+---
+PHASE 5: FINAL REPORT
+Provide a concise report:
+- Environment selected
+- Previous commit
+- Current commit
+- Git synchronization result (SYNCED/DIVERGED/etc.)
+- Working-tree status (CLEAN/DIRTY)
+- Runtime readiness (READY/NOT READY with specific missing items)
+- Required manual actions
+
+---
+PROHIBITED ACTIONS
+- Infer environment automatically
+- Modify BIOrch source/governance/phase state
+- Perform destructive Git operations (force-push, merge, rebase, stash, reset)
+- Automatically install dependencies or modify system state
+"""
+,file_path:
