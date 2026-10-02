@@ -39,8 +39,8 @@ Analysis-ready output
 - [COMPLETED] Phase 4 — Deterministic Orchestrator: Hardcoded orchestration flows (e.g., inspect → analyze → implement → validate → review).
 - [COMPLETED] Phase 5 — Multiple Agents: Introducing domain agents (TableauAgent, PowerBIAgent) into the orchestrator.
 - [COMPLETED] Phase 6 — TabUI Integration: Orchestrating TabUI capabilities for Tableau analysis.
-- [PLANNED] Phase 7 — PBIParser Integration: Orchestrating PBIParser capabilities for Power BI analysis.
-- [PLANNED] Phase 8 — Parallel Orchestration: Allowing independent tasks (e.g., concurrent Tableau and Power BI analysis) to execute in parallel.
+- [COMPLETED] Phase 7 — PBIParser Integration: Orchestrating PBIParser capabilities for Power BI analysis.
+- [IN PROGRESS] Phase 8 — Parallel Orchestration: Allowing independent tasks (e.g., concurrent Tableau and Power BI analysis) to execute in parallel.
 - [PLANNED] Phase 9 — Evaluator / Reviewer Loops: Introducing Maker/Checker loops with retry limits.
 - [PLANNED] Phase 10 — LLM-based Planning: Replacing deterministic workflows with dynamic LLM-based task graph generation and routing.
 - [PLANNED] Phase 11 — Cross-BI Analysis: Enabling comparative analysis between different BI platforms (e.g., Tableau vs. Power BI).
@@ -59,4 +59,13 @@ must NOT be interpreted as runtime BI orchestration agents.
 ## Change History
 - 2026-09-27: Initial roadmap canonicalization and structuring.
 
-<!-- TEST DRIFT -->
+## Backlog
+
+### Git Diff Execution Failure Investigation
+- **Description**: Investigate why Git fails to execute diff commands (\`git diff\`, \`git diff HEAD\`) with "external diff died" errors.
+- **Goals**:
+    - Identify if \`GIT_EXTERNAL_DIFF\`, diff configurations, or environment variables are causing the failure.
+    - Determine how to restore standard Git diff functionality.
+- **Constraints**: Must NOT modify project code or governance merely to bypass this issue.
+- **Status**: [PLANNED]
+

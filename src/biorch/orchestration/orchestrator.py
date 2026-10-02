@@ -5,6 +5,8 @@ from biorch.core.task import Task, TaskStatus
 from biorch.agents.deterministic_agent import DeterministicAgentExecutor
 from biorch.orchestration.agent_resolver import AgentResolver, AgentNotFoundError
 from .result import WorkflowResult, WorkflowResultStatus
+from .handoff import HandoffPayload
+from .join_gate import DeterministicJoinGate
 
 class DeterministicOrchestrator:
     """
@@ -21,6 +23,14 @@ class DeterministicOrchestrator:
                 agent_resolver_or_executor.agent_definition.agent_id: agent_resolver_or_executor
             })
             self.agent_executor = agent_resolver_or_executor
+        self.collected_artifacts: Dict[str, Any] = {}
+
+    def run_with_handoff(self, workflow: Workflow) -> HandoffPayload:
+        """
+        Executes the workflow and returns a HandoffPayload via the Join Gate.
+        """
+        workflow_result = self.execute(workflow)
+        return DeterministicJoinGate.evaluate(workflow, workflow_result, self.collected_artifacts)
 
     def validate_workflow(self, workflow: Workflow) -> List[str]:
         """
@@ -158,6 +168,7 @@ class DeterministicOrchestrator:
         validation_errors = self.validate_workflow(workflow)
         workflow_version = getattr(workflow, "version", "1.0") or "1.0"
         workflow_id = getattr(workflow, "workflow_id", "") or ""
+        self.collected_artifacts = {}
 
         # Fail closed before any step executes
         if validation_errors:
@@ -329,6 +340,7 @@ class DeterministicOrchestrator:
                         completed_tasks.append(tid)
                         executed_order.append(tid)
                         results[tid] = result.findings
+                        self.collected_artifacts[tid] = result.artifacts
                         step_results[tid] = {
                             "status": WorkflowResultStatus.SUCCESS.value,
                             "findings": result.findings,
@@ -384,7 +396,7 @@ class DeterministicOrchestrator:
             failed_task=None,
             not_executed_tasks=[],
             results=results,
-            step_results=step_results,
+            step_results=self._reconcile_terminal_outcomes(workflow, step_results),
             errors=[],
             provenance={
                 "workflow_id": workflow_id,
@@ -396,6 +408,29 @@ class DeterministicOrchestrator:
                 "terminal_status": WorkflowResultStatus.SUCCESS.value
             }
         )
+
+    def _reconcile_terminal_outcomes(self, workflow: Workflow, step_results: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Verifies that all dispatched tasks have reached a terminal status.
+        Raises RuntimeError if any task is missing or has a non-terminal status.
+        """
+        terminal_statuses = {
+            WorkflowResultStatus.SUCCESS.value,
+            WorkflowResultStatus.FAILED.value,
+            TaskStatus.TIMEOUT.value,
+            WorkflowResultStatus.NOT_EXECUTED.value
+        }
+
+        for task in workflow.tasks:
+            tid = task.task_id
+            if tid not in step_results:
+                raise RuntimeError(f"Task '{tid}' is missing from terminal step_results.")
+
+            status = step_results[tid].get("status")
+            if status not in terminal_statuses:
+                raise RuntimeError(f"Task '{tid}' has non-terminal status: '{status}'.")
+
+        return step_results
 
     def _create_terminal_failure(
         self, workflow_id, workflow_version, terminal_status,

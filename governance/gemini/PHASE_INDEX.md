@@ -15,8 +15,8 @@
 | 08.4B | Worker Invocation Boundary | Worker boundary investigation   | PASS / COMPLETE     | TASK.md | RESPONSE.md | REVIEW.md |
 | 08.4C | Parallel Dispatch          | Parallel task dispatch          | CLOSED              | TASK.md | RESPONSE.md | REVIEW.md |
 | 08.4D | Parallel Task Execution    | Worker-level execution          | CLOSED              | TASK.md | RESPONSE.md | REVIEW.md |
-| 08.4E | Timeout Enforcement        | Worker timeout logic            | PENDING             | TASK.md | RESPONSE.md | REVIEW.md |
-| 08.4F | Join Gate                  | Reconciliation logic            | PENDING             | TASK.md | RESPONSE.md | REVIEW.md |
+| 08.4E | Join/Reconciliation        | Reconciliation logic            | CLOSED              | TASK.md | RESPONSE.md | REVIEW.md |
+| 08.4F | Join Gate                  | Reconciliation logic            | CLOSED              | TASK.md | RESPONSE.md | REVIEW.md |
 | 08.4G | Result Synthesis           | Synthesis implementation        | PENDING             | TASK.md | RESPONSE.md | REVIEW.md |
 | 08.4H | Provenance Validation      | Provenance/Audit                | PENDING             | TASK.md | RESPONSE.md | REVIEW.md |
 | 09    | Review Loop                | Reviewer/validation workflow    | PLANNED             | TASK.md | RESPONSE.md | REVIEW.md |
