@@ -4,7 +4,7 @@
 
 **Contract Name:** Deterministic Orchestrator Contract
 
-**Phase:** Phase 04 — Deterministic Orchestrator
+**Phase:** Phase 08 — Parallel Orchestration
 
 **Status:** DRAFT
 
@@ -17,11 +17,11 @@
 ## 1. Purpose
 
 This contract defines the minimum deterministic orchestration boundary for
-BIOrch.
+BIOrch, including parallel orchestration capabilities established in Phase 08.
 
-Phase 04 introduces the ability to execute a predefined, ordered workflow
-consisting of known tasks through the existing Deterministic Agent and Tool
-Gateway boundaries.
+Phase 04 established sequential workflow orchestration, and Phase 08 introduces the ability to execute a predefined, ordered workflow
+consisting of known sequential or parallel tasks through the existing
+Deterministic Agent and Tool Gateway boundaries.
 
 The orchestrator MUST coordinate execution.
 
@@ -48,7 +48,7 @@ The required architectural relationship is:
 
 ## 2. Architectural Principle
 
-The Phase 04 orchestrator is a coordination component, not an autonomous
+The orchestrator is a coordination component, not an autonomous
 planner.
 
 It MUST execute a workflow that has already been explicitly defined.
@@ -101,31 +101,25 @@ The orchestrator MUST execute steps in their declared order.
 
 ---
 
-## 5. Sequential Execution
+## 5. Execution Strategy
 
-Phase 04 MUST support sequential workflow execution.
+The orchestrator MUST support both sequential and parallel workflow execution.
 
 Given:
 
     [Step A, Step B, Step C]
 
-the execution order MUST always be:
+the execution order MUST follow the explicitly defined workflow dependencies.
 
-    Step A
-       ↓
-    Step B
-       ↓
-    Step C
+Explicitly independent, non-dependent specialist tasks MAY execute concurrently if the workflow explicitly declares them eligible for parallel dispatch.
 
 The orchestrator MUST NOT:
 
-- reorder steps;
-- execute steps concurrently;
-- skip steps without an explicit workflow rule;
+- reorder steps except as permitted by parallel dispatch rules;
 - dynamically insert steps;
 - dynamically remove steps.
 
-Parallel execution belongs to Phase 08.
+All parallel execution MUST be deterministic and maintain the integrity of the final workflow synthesis.
 
 ---
 
@@ -196,9 +190,11 @@ provided or registered.
 
 ## 9. Step Failure Behavior
 
-The default Phase 04 behavior is fail-fast.
+The default behavior is fail-fast.
 
-If a workflow step fails:
+### 9.1 Sequential Workflow
+
+If a sequential workflow step fails:
 
     Step A → SUCCESS
     Step B → FAILURE
@@ -207,13 +203,30 @@ If a workflow step fails:
 the orchestrator MUST terminate the workflow unless an explicitly defined
 workflow policy permits continuation.
 
+### 9.2 Parallel Workflow
+
+If a parallel workflow task fails or times out, the orchestrator MUST classify the task as 'essential' or 'non-essential'.
+
+#### 9.2.1 Essential Failure/Timeout
+Failure or timeout of an 'essential' parallel task MUST terminate the workflow immediately.
+
+#### 9.2.2 Non-Essential Failure/Timeout
+Failure or timeout of a 'non-essential' parallel task MUST be handled as follows:
+- The failure/timeout MUST be recorded as the terminal task status (e.g., `FAILED`, `TIMEOUT`).
+- Independent tasks within the parallel set MAY continue.
+- Any task that directly or transitively depends on the failed/timed-out task MUST NOT execute.
+- Dependent tasks MUST be recorded as `NOT_EXECUTED`.
+- The workflow MAY proceed toward the final 08.4E join/reconciliation gate.
+- "Non-essential" describes the importance of the task to overall workflow termination; it does NOT convert a failed/timed-out task into a successfully completed dependency.
+- Final synthesis/reconciliation validity belongs to the 08.4E join/reconciliation stage; 08.4D is responsible for execution-state classification only and MUST NOT attempt synthesis.
+
 The orchestrator MUST NOT silently continue after a failed required step.
 
 ---
 
 ## 10. Retry Behavior
 
-Phase 04 MUST NOT introduce autonomous retry policies.
+The orchestrator MUST NOT introduce autonomous retry policies.
 
 The orchestrator MUST NOT retry a failed step unless the workflow explicitly
 defines a deterministic retry policy.
@@ -240,7 +253,8 @@ A workflow MUST terminate when:
 
 - all required steps complete successfully; or
 - a required step fails; or
-- an explicitly defined deterministic termination rule is reached.
+- an explicitly defined deterministic termination rule is reached; or
+- for parallel workflows, the join/reconciliation gate is finalized.
 
 The orchestrator MUST NOT run indefinitely.
 
@@ -333,7 +347,7 @@ The orchestrator MUST NOT mutate a workflow dynamically during execution.
 
 ## 16. Idempotency and Re-Execution
 
-Phase 04 MUST define deterministic behavior for workflow re-execution.
+The orchestrator MUST define deterministic behavior for workflow re-execution.
 
 A failed workflow MUST NOT automatically restart from the beginning unless an
 explicit deterministic execution policy requests it.
@@ -346,29 +360,30 @@ the implementation contract.
 
 ---
 
-## 17. Scope of Phase 04
+## 17. Scope
 
-Phase 04 MUST establish only deterministic sequential orchestration.
+The orchestrator establishes both deterministic sequential and parallel orchestration.
 
 IN SCOPE:
 
 - workflow definition;
 - workflow validation;
 - deterministic step ordering;
-- sequential execution;
+- sequential and parallel execution;
 - delegation to Deterministic Agent;
 - step result collection;
 - fail-fast behavior;
 - deterministic termination;
 - structured workflow results;
-- execution-state tracking necessary for the above;
+- deterministic join/reconciliation;
+- execution-state tracking;
 - unit tests for orchestration behavior.
 
 ---
 
 ## 18. Explicitly Out of Scope
 
-The following MUST NOT be implemented in Phase 04:
+The following MUST NOT be implemented:
 
 ### Multi-Agent Architecture
 
@@ -378,15 +393,6 @@ The following MUST NOT be implemented in Phase 04:
 - autonomous agent discovery.
 
 These belong to later phases.
-
-### Parallel Execution
-
-- concurrent agent execution;
-- parallel branches;
-- task fan-out/fan-in;
-- worker pools.
-
-Parallel orchestration belongs to Phase 08.
 
 ### Review Loops
 
@@ -495,9 +501,15 @@ Verify that a lower-level Tool Gateway rejection cannot be bypassed.
 Verify that repeated execution of the same workflow produces the same
 declared step order.
 
-### 21.7 No Parallel Execution
+### 21.7 Deterministic Parallel Execution
 
-Verify that Phase 04 does not execute independent steps concurrently.
+Verify that:
+- explicitly independent tasks may execute concurrently;
+- dependent tasks do not execute concurrently;
+- worker failures are recorded;
+- worker timeout is handled;
+- deterministic join/reconciliation occurs;
+- final synthesis does not depend on worker completion order.
 
 ### 21.8 Explicit Termination
 
@@ -512,7 +524,7 @@ than invoking tools directly.
 
 ## 22. Architectural Acceptance Criteria
 
-Phase 04 is compliant only when all of the following are true:
+The orchestrator is compliant only when all of the following are true:
 
 1. A workflow can be explicitly defined.
 2. The workflow can be validated before execution.
@@ -524,7 +536,7 @@ Phase 04 is compliant only when all of the following are true:
 8. Workflow execution produces a structured result.
 9. Workflow execution always terminates.
 10. No LLM planning is introduced.
-11. No parallel execution is introduced.
+11. Deterministic parallel execution is implemented as specified in Phase 08.
 12. No multi-agent architecture is introduced.
 13. No review loop is introduced.
 14. No BI parser integration is introduced.
@@ -550,21 +562,15 @@ contract.
 
 ## 24. Phase Boundary
 
-Phase 04 establishes:
+Phase 04 established deterministic sequential orchestration. Phase 08 extends this boundary to include deterministic parallel execution:
 
-    "Known workflow → deterministic sequential execution"
+    "Known workflow → deterministic sequential or parallel execution"
 
 It does NOT establish:
 
     "Decide what workflow should exist."
 
 Dynamic planning belongs to Phase 10.
-
-It does NOT establish:
-
-    "Execute multiple agents concurrently."
-
-Parallel orchestration belongs to Phase 08.
 
 It does NOT establish:
 
@@ -583,3 +589,52 @@ Therefore the canonical Phase 04 boundary is:
     Tool Gateway
           ↓
     Authorized Tool
+
+---
+
+## 25. Parallel Orchestration Requirements
+
+Phase 08 introduces deterministic parallel execution.
+
+### 25.1 Parallel Dispatch
+- The orchestrator MUST explicitly dispatch tasks identified as independent to specialist workers.
+- Parallel execution MUST NOT imply non-deterministic ordering of synthesis.
+
+### 25.2 Worker Isolation
+- Each parallel specialist worker MUST operate in an isolated execution boundary with:
+    - Bounded task scope;
+    - Explicit input/output contract;
+    - Independent lifecycle state;
+    - Explicit timeout boundary;
+    - Independent failure state recording.
+
+### 25.3 Timeout Boundary
+- Every parallel worker invocation MUST have an explicit, mandatory timeout boundary enforced by the orchestrator.
+
+### 25.4 Join Gate / Reconciliation
+- Before final synthesis, the orchestrator MUST implement a deterministic join gate:
+    1. Collect all parallel worker results;
+    2. Validate each result deterministically;
+    3. Record individual worker status (SUCCESS/FAILED/TIMEOUT);
+    4. Validate provenance;
+    5. Deterministically order results for synthesis;
+    6. Identify any failed/missing workers;
+    7. Determine if synthesis is permitted based on the orchestration policy.
+
+The final synthesis MUST NOT depend on the execution completion order of workers.
+
+---
+
+## 26. Phase 07 Protection Boundary
+
+Phase 08 orchestration MUST consume Phase 07 Power BI/PBIParser outputs
+deterministically.
+
+The orchestrator MUST NOT:
+
+- modify PBIParser internal implementation;
+- reimplement PBIParser logic;
+- alter canonical Power BI contracts (`POWERBI_AGENT_CONTRACT`);
+- bypass Power BI agent boundaries.
+
+All Power BI metadata extraction MUST adhere to the Phase 07 contract.

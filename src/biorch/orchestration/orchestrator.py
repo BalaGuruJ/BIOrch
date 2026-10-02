@@ -1,7 +1,7 @@
 from typing import List, Dict, Any, Optional
 from biorch.core.workflow import Workflow
 from biorch.core.result import Result, ResultStatus
-from biorch.core.task import Task
+from biorch.core.task import Task, TaskStatus
 from biorch.agents.deterministic_agent import DeterministicAgentExecutor
 from biorch.orchestration.agent_resolver import AgentResolver, AgentNotFoundError
 from .result import WorkflowResult, WorkflowResultStatus
@@ -151,9 +151,9 @@ class DeterministicOrchestrator:
 
     def execute(self, workflow: Workflow) -> WorkflowResult:
         """
-        Executes the workflow sequentially and returns a structured result.
+        Executes the workflow, supporting both sequential and parallel execution.
         Fails closed on validation failure before executing any steps.
-        Preserves declared order and fail-fast termination on step failure/rejection.
+        Preserves dependency order and fail-fast termination on step failure/rejection.
         """
         validation_errors = self.validate_workflow(workflow)
         workflow_version = getattr(workflow, "version", "1.0") or "1.0"
@@ -195,114 +195,186 @@ class DeterministicOrchestrator:
                 }
             )
 
+        from concurrent.futures import ThreadPoolExecutor
+
         completed_tasks: List[str] = []
         executed_order: List[str] = []
         results: Dict[str, Any] = {}
         step_results: Dict[str, Any] = {}
 
-        for i, task in enumerate(workflow.tasks):
-            executed_order.append(task.task_id)
-            
-            try:
-                executor = self.agent_resolver.resolve(task.agent_id)
-                result = executor.execute(task)
-            except AgentNotFoundError:
-                # Terminal workflow failure
-                failed_task = task.task_id
-                terminal_status = WorkflowResultStatus.FAILED
-                
-                step_results[task.task_id] = {
-                    "status": WorkflowResultStatus.FAILED.value,
-                    "findings": [],
-                    "errors": [f"Agent '{task.agent_id}' not found during execution"]
-                }
-                
-                # Mark remaining tasks as NOT_EXECUTED
-                remaining_tasks = workflow.tasks[i + 1:]
-                not_executed_tasks = [t.task_id for t in remaining_tasks]
-                for t in remaining_tasks:
-                    step_results[t.task_id] = {
-                        "status": WorkflowResultStatus.NOT_EXECUTED.value,
+        # Track task status
+        pending_tasks = {task.task_id: task for task in workflow.tasks}
+        in_progress_tasks: Dict[str, Task] = {}
+
+        def execute_task(task: Task) -> Result:
+            executor = self.agent_resolver.resolve(task.agent_id)
+            return executor.execute(task)
+
+        # Main execution loop
+        with ThreadPoolExecutor() as executor:
+            futures: Dict[str, Any] = {} # Map tid -> {"future": Future, "task": Task, "start_time": float}
+
+            while pending_tasks or futures:
+                # Identify ready tasks
+                ready_tasks = []
+                for tid, task in pending_tasks.items():
+                    dependencies_met = all(dep in completed_tasks for dep in task.dependencies)
+                    if dependencies_met:
+                        ready_tasks.append(task)
+
+                # Sort ready tasks deterministically
+                ready_tasks.sort(key=lambda t: t.task_id)
+
+                # Check for parallel dispatch opportunities
+                if not ready_tasks:
+                    if futures:
+                        # Wait for at least one future to complete or timeout
+                        from concurrent.futures import wait, FIRST_COMPLETED
+
+                        # Calculate wait time based on earliest timeout
+                        timeout_val = None
+                        now = time.time()
+
+                        min_timeout = None
+                        for tid, f_data in futures.items():
+                            task = f_data["task"]
+                            timeout = task.metadata.get("timeout") if task.metadata else None
+                            if timeout:
+                                elapsed = now - f_data["start_time"]
+                                remaining = timeout - elapsed
+                                if min_timeout is None or remaining < min_timeout:
+                                    min_timeout = max(0, remaining)
+
+                        wait([f_data["future"] for f_data in futures.values()], timeout=min_timeout, return_when=FIRST_COMPLETED)
+                    else:
+                        # Workflow completed or stuck
+                        if pending_tasks:
+                            # Workflow stuck: mark remaining as NOT_EXECUTED
+                            for tid in list(pending_tasks.keys()):
+                                step_results[tid] = {
+                                    "status": WorkflowResultStatus.NOT_EXECUTED.value,
+                                    "findings": [],
+                                    "errors": ["Workflow stuck: dependencies not met"]
+                                }
+                        break # Workflow completed or stuck
+
+                # Handle future completions and timeouts
+                import time
+                now = time.time()
+
+                done = []
+                timed_out = []
+
+                for tid, f_data in futures.items():
+                    if f_data["future"].done():
+                        done.append(tid)
+                    else:
+                        task = f_data["task"]
+                        timeout = task.metadata.get("timeout") if task.metadata else None
+                        if timeout:
+                            elapsed = now - f_data["start_time"]
+                            if elapsed >= float(timeout):
+                                timed_out.append(tid)
+
+                # Handle timeouts first
+                for tid in timed_out:
+                    f_data = futures.pop(tid)
+                    task = in_progress_tasks.pop(tid)
+                    f_data["future"].cancel() # Best-effort cancellation
+
+                    # Record timeout status
+                    step_results[tid] = {
+                        "status": TaskStatus.TIMEOUT.value,
                         "findings": [],
-                        "errors": []
+                        "errors": ["Task timed out"]
                     }
 
-                return WorkflowResult(
-                    workflow_id=workflow_id,
-                    workflow_version=workflow_version,
-                    status=terminal_status,
-                    completed_tasks=completed_tasks,
-                    failed_task=failed_task,
-                    not_executed_tasks=not_executed_tasks,
-                    results=results,
-                    step_results=step_results,
-                    errors=[f"Agent '{task.agent_id}' not found during execution"],
-                    provenance={
-                        "workflow_id": workflow_id,
-                        "workflow_version": workflow_version,
-                        "validation_passed": True,
-                        "execution_order": executed_order,
-                        "completed_steps": completed_tasks,
-                        "failed_step": failed_task,
-                        "terminal_status": terminal_status.value
-                    }
-                )
+                    # Handle failure classification
+                    if getattr(task, "is_essential", True):
+                        return self._create_terminal_failure(
+                            workflow_id, workflow_version, WorkflowResultStatus.FAILED,
+                            completed_tasks, tid, {**pending_tasks, **in_progress_tasks}, step_results,
+                            executed_order, results, ["Task timed out: essential task failure"]
+                        )
+                    else:
+                        # Non-essential failure: record, block dependents, and continue
+                        self._block_dependents(tid, pending_tasks, step_results)
 
-            if result.status == ResultStatus.SUCCESS:
-                completed_tasks.append(task.task_id)
-                findings = result.findings or []
-                results[task.task_id] = findings
-                step_results[task.task_id] = {
-                    "status": WorkflowResultStatus.SUCCESS.value,
-                    "findings": findings,
-                    "errors": []
-                }
-            else:
-                # Fail-fast
-                failed_task = task.task_id
-                is_rejection = self._is_rejection(result)
-                terminal_status = (
-                    WorkflowResultStatus.REJECTED if is_rejection else WorkflowResultStatus.FAILED
-                )
-                step_status = (
-                    WorkflowResultStatus.REJECTED.value if is_rejection else WorkflowResultStatus.FAILED.value
-                )
-                step_results[task.task_id] = {
-                    "status": step_status,
-                    "findings": [],
-                    "errors": result.errors or []
-                }
 
-                # Mark remaining tasks as NOT_EXECUTED
-                remaining_tasks = workflow.tasks[i + 1:]
-                not_executed_tasks = [t.task_id for t in remaining_tasks]
-                for t in remaining_tasks:
-                    step_results[t.task_id] = {
-                        "status": WorkflowResultStatus.NOT_EXECUTED.value,
-                        "findings": [],
-                        "errors": []
-                    }
+                # Handle completions
+                for tid in done:
+                    f_data = futures.pop(tid)
+                    task = in_progress_tasks.pop(tid)
 
-                return WorkflowResult(
-                    workflow_id=workflow_id,
-                    workflow_version=workflow_version,
-                    status=terminal_status,
-                    completed_tasks=completed_tasks,
-                    failed_task=failed_task,
-                    not_executed_tasks=not_executed_tasks,
-                    results=results,
-                    step_results=step_results,
-                    errors=result.errors or [],
-                    provenance={
-                        "workflow_id": workflow_id,
-                        "workflow_version": workflow_version,
-                        "validation_passed": True,
-                        "execution_order": executed_order,
-                        "completed_steps": completed_tasks,
-                        "failed_step": failed_task,
-                        "terminal_status": terminal_status.value
+                    try:
+                        result = f_data["future"].result()
+                    except Exception as e:
+                        # Exception as terminal failure
+                        if getattr(task, "is_essential", True):
+                            failed_task = tid
+                            return self._create_terminal_failure(
+                                workflow_id, workflow_version, WorkflowResultStatus.FAILED,
+                                completed_tasks, failed_task, {**pending_tasks, **in_progress_tasks}, step_results,
+                                executed_order, results, [str(e)]
+                            )
+                        else:
+                            step_results[tid] = {
+                                "status": WorkflowResultStatus.FAILED.value,
+                                "findings": [],
+                                "errors": [str(e)]
+                            }
+                            continue
+
+                    if result.status == ResultStatus.SUCCESS:
+                        completed_tasks.append(tid)
+                        executed_order.append(tid)
+                        results[tid] = result.findings
+                        step_results[tid] = {
+                            "status": WorkflowResultStatus.SUCCESS.value,
+                            "findings": result.findings,
+                            "errors": []
+                        }
+                    else:
+                        # Failure classification
+                        is_essential = getattr(task, "is_essential", True)
+                        if is_essential:
+                            failed_task = tid
+                            return self._create_terminal_failure(
+                                workflow_id, workflow_version,
+                                WorkflowResultStatus.REJECTED if self._is_rejection(result) else WorkflowResultStatus.FAILED,
+                                completed_tasks, failed_task, {**pending_tasks, **in_progress_tasks}, step_results,
+                                executed_order, results, result.errors
+                            )
+                        else:
+                            # Non-essential failure: record, block dependents, and continue
+                            step_results[tid] = {
+                                "status": WorkflowResultStatus.FAILED.value,
+                                "findings": [],
+                                "errors": result.errors
+                            }
+                            self._block_dependents(tid, pending_tasks, step_results)
+
+                # Dispatch tasks
+                for task in ready_tasks:
+                    if task.task_id in futures:
+                        continue
+
+                    # Dispatch
+                    future = executor.submit(execute_task, task)
+                    futures[task.task_id] = {
+                        "future": future,
+                        "task": task,
+                        "start_time": time.time()
                     }
-                )
+                    in_progress_tasks[task.task_id] = pending_tasks.pop(task.task_id)
+
+                    # If not parallel-eligible, wait for this task to finish before dispatching more
+                    if not task.is_parallel_eligible:
+                        from concurrent.futures import wait
+                        timeout = task.metadata.get("timeout") if task.metadata else None
+                        timeout_val = float(timeout) if timeout else None
+                        wait([futures[task.task_id]["future"]], timeout=timeout_val)
+                        break # Need to re-evaluate ready tasks
 
         return WorkflowResult(
             workflow_id=workflow_id,
@@ -324,3 +396,68 @@ class DeterministicOrchestrator:
                 "terminal_status": WorkflowResultStatus.SUCCESS.value
             }
         )
+
+    def _create_terminal_failure(
+        self, workflow_id, workflow_version, terminal_status,
+        completed_tasks, failed_task, pending_tasks, step_results,
+        executed_order, results, errors
+    ) -> WorkflowResult:
+
+        # Prepare step results for all tasks
+        # completed_tasks are already in step_results
+
+        # Add failed task
+        existing_status = step_results.get(failed_task, {}).get("status")
+        final_status = existing_status if existing_status == TaskStatus.TIMEOUT.value else terminal_status.value
+
+        step_results[failed_task] = {
+            "status": final_status,
+            "findings": [],
+            "errors": errors
+        }
+
+        # Mark remaining tasks as NOT_EXECUTED
+        not_executed_tasks = []
+        for tid, task in pending_tasks.items():
+            if tid != failed_task:
+                step_results[tid] = {
+                    "status": WorkflowResultStatus.NOT_EXECUTED.value,
+                    "findings": [],
+                    "errors": []
+                }
+                not_executed_tasks.append(tid)
+
+        return WorkflowResult(
+            workflow_id=workflow_id,
+            workflow_version=workflow_version,
+            status=terminal_status,
+            completed_tasks=completed_tasks,
+            failed_task=failed_task,
+            not_executed_tasks=not_executed_tasks,
+            results=results,
+            step_results=step_results,
+            errors=errors,
+            provenance={
+                "workflow_id": workflow_id,
+                "workflow_version": workflow_version,
+                "validation_passed": True,
+                "execution_order": executed_order + [failed_task],
+                "completed_steps": completed_tasks,
+                "failed_step": failed_task,
+                "terminal_status": terminal_status.value
+            }
+        )
+
+    def _block_dependents(self, blocked_tid: str, pending_tasks: Dict[str, Task], step_results: Dict[str, Any]):
+        """
+        Recursively marks direct and transitive dependents of a blocked task as NOT_EXECUTED.
+        """
+        dependents = [tid for tid, task in pending_tasks.items() if blocked_tid in task.dependencies]
+        for tid in dependents:
+            step_results[tid] = {
+                "status": WorkflowResultStatus.NOT_EXECUTED.value,
+                "findings": [],
+                "errors": [f"Dependency '{blocked_tid}' failed or timed out"]
+            }
+            pending_tasks.pop(tid)
+            self._block_dependents(tid, pending_tasks, step_results)

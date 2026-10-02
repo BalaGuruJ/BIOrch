@@ -8,6 +8,8 @@ class TaskStatus(str, Enum):
     COMPLETED = "completed"
     FAILED = "failed"
     CANCELLED = "cancelled"
+    TIMEOUT = "timeout"
+    NOT_EXECUTED = "not_executed"
 
 class Task(BaseModel):
     """
@@ -21,3 +23,11 @@ class Task(BaseModel):
     dependencies: List[str] = Field(default_factory=list, description="List of task IDs that must complete before this task can start.")
     metadata: Optional[Dict[str, Any]] = Field(default=None, description="Additional context or tracking information.")
     status: TaskStatus = Field(..., description="Current execution status of the task.")
+    is_parallel_eligible: bool = Field(
+        default=False,
+        description="Whether the task may participate in parallel dispatch when its dependencies are satisfied and workflow policy permits parallel execution."
+    )
+    is_essential: bool = Field(
+        default=True,
+        description="Whether failure or timeout of this task prevents successful workflow completion."
+    )
