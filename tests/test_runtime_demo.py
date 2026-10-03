@@ -172,6 +172,23 @@ def test_runtime_demo_workflow_parallel_execution(tmp_path):
     assert validator.verify_audit_checksum(checksum) is True
 
 
+def test_runtime_demo_entrypoint_executes_repository_samples(capsys):
+    """Verify the runtime demo authorizes and executes both repository samples."""
+    if not os.environ.get("DOTNET_ROOT") or not os.environ.get("BIORCH_TOM_DLL_PATH"):
+        pytest.skip("Power BI environment prerequisites not set")
+
+    assert run_demonstration() == 0
+
+    output = capsys.readouterr().out
+    assert "Tableau\n" in output
+    assert "Power BI\n" in output
+    assert output.count("  status: SUCCESS") == 2
+    assert "  task count: 2" in output
+    assert "  parallel-ready tasks: 2" in output
+    assert "  synthesis: SUCCESS" in output
+    assert "  provenance: VALID" in output
+
+
 def test_repeatable_runtime_command_callable():
     """Verify run_demonstration function is callable."""
     assert callable(run_demonstration)
