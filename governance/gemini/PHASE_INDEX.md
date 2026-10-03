@@ -17,7 +17,7 @@
 | 08.4D | Parallel Task Execution    | Worker-level execution          | CLOSED              | TASK.md | RESPONSE.md | REVIEW.md |
 | 08.4E | Join/Reconciliation        | Reconciliation logic            | CLOSED              | TASK.md | RESPONSE.md | REVIEW.md |
 | 08.4F | Join Gate                  | Reconciliation logic            | CLOSED              | TASK.md | RESPONSE.md | REVIEW.md |
-| 08.4G | Result Synthesis           | Synthesis implementation        | PENDING             | TASK.md | RESPONSE.md | REVIEW.md |
+| 08.4G | Result Synthesis           | Synthesis implementation        | CLOSED              | TASK_08_4G.md | RESPONSE_08_4G.md | REVIEW_08_4G.md |
 | 08.4H | Provenance Validation      | Provenance/Audit                | PENDING             | TASK.md | RESPONSE.md | REVIEW.md |
 | 09    | Review Loop                | Reviewer/validation workflow    | PLANNED             | TASK.md | RESPONSE.md | REVIEW.md |
 | 10    | LLM-Based Planning         | Adaptive task planning          | PLANNED             | TASK.md | RESPONSE.md | REVIEW.md |

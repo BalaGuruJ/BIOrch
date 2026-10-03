@@ -32,6 +32,14 @@ class DeterministicOrchestrator:
         workflow_result = self.execute(workflow)
         return DeterministicJoinGate.evaluate(workflow, workflow_result, self.collected_artifacts)
 
+    def run_with_synthesis(self, workflow: Workflow) -> Dict[str, Any]:
+        """
+        Executes the workflow, evaluates the join gate, and performs result synthesis.
+        """
+        from .synthesis import synthesize_result
+        handoff = self.run_with_handoff(workflow)
+        return synthesize_result(handoff)
+
     def validate_workflow(self, workflow: Workflow) -> List[str]:
         """
         Validates all applicable workflow properties before execution:
