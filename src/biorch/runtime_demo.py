@@ -205,7 +205,7 @@ def run_demonstration() -> int:
             "tool_id": "tableau_extractor",
             "version": "1.0",
             "operation": "EXTRACT",
-            "resource": str(tableau_input),
+            "resource": tableau_input.relative_to(repo_root).as_posix(),
             "tool_inputs": {
                 "input_path": str(tableau_input),
                 "output_directory": "/tmp/biorch_runtime_demo/tableau"
@@ -223,7 +223,7 @@ def run_demonstration() -> int:
             "tool_id": "powerbi_adapter",
             "version": "1.0",
             "operation": "ANALYZE",
-            "resource": str(pbi_input),
+            "resource": pbi_input.relative_to(repo_root).as_posix(),
             "tool_inputs": {
                 "model_folder": str(pbi_input)
             }
