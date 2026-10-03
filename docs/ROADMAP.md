@@ -40,8 +40,8 @@ Analysis-ready output
 - [COMPLETED] Phase 5 — Multiple Agents: Introducing domain agents (TableauAgent, PowerBIAgent) into the orchestrator.
 - [COMPLETED] Phase 6 — TabUI Integration: Orchestrating TabUI capabilities for Tableau analysis.
 - [COMPLETED] Phase 7 — PBIParser Integration: Orchestrating PBIParser capabilities for Power BI analysis.
-- [IN PROGRESS] Phase 8 — Parallel Orchestration: Allowing independent tasks (e.g., concurrent Tableau and Power BI analysis) to execute in parallel.
-- [PLANNED] Phase 9 — Evaluator / Reviewer Loops: Introducing Maker/Checker loops with retry limits.
+- [COMPLETED] Phase 8 — Parallel Orchestration: Allowing independent tasks (e.g., concurrent Tableau and Power BI analysis) to execute in parallel.
+- [IN PROGRESS] Phase 9 — Evaluator / Reviewer Loops: Introducing Maker/Checker loops with retry limits.
 - [PLANNED] Phase 10 — LLM-based Planning: Replacing deterministic workflows with dynamic LLM-based task graph generation and routing.
 - [PLANNED] Phase 11 — Cross-BI Analysis: Enabling comparative analysis between different BI platforms (e.g., Tableau vs. Power BI).
 - [PLANNED] Phase 12 — Reporting / Analysis Platform: Outputting canonical, analysis-ready metadata in various formats (CSV, JSON, Excel).
@@ -68,4 +68,3 @@ must NOT be interpreted as runtime BI orchestration agents.
     - Determine how to restore standard Git diff functionality.
 - **Constraints**: Must NOT modify project code or governance merely to bypass this issue.
 - **Status**: [PLANNED]
-

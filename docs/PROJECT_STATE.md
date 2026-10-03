@@ -1,8 +1,8 @@
 # BIOrch Project State
 
-- **LAST_COMPLETED:** Phase 07 (PBIParser Integration).
-- **ACTIVE:** Phase 08 (Parallel Orchestration).
-- **NEXT_PLANNED:** Phase 09 (Review Loop).
-- **Status:** Phase 07 (PBIParser Integration) has been completed, reconciled, and verified.
-- **Runtime Execution:** Initial .NET/TOM integration achieved and verified.
+- **LAST_COMPLETED:** Phase 08 (Parallel Orchestration).
+- **ACTIVE:** Phase 09 (Review Loop).
+- **NEXT_PLANNED:** Phase 10 (LLM-Based Planning).
+- **Status:** Phase 08 (Parallel Orchestration including dispatch, execution, reconciliation, synthesis, and provenance validation) has been successfully completed, closed, and verified.
+- **Runtime Execution:** Parallel dispatch, result synthesis, and provenance verification achieved and verified.
 - **Framework Selection:** Intentionally deferred. Designing framework-neutral contracts.
