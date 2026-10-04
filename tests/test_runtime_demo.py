@@ -1,5 +1,6 @@
 import pytest
 import os
+import time
 from pathlib import Path
 from biorch.core.workflow import Workflow
 from biorch.core.task import Task, TaskStatus
@@ -192,3 +193,122 @@ def test_runtime_demo_entrypoint_executes_repository_samples(capsys):
 def test_repeatable_runtime_command_callable():
     """Verify run_demonstration function is callable."""
     assert callable(run_demonstration)
+
+
+def test_runtime_demo_evidence_bundle_generation(tmp_path):
+    """Verify run_demonstration generates a complete evidence bundle on execution."""
+    repo_root = Path(__file__).resolve().parent.parent
+    tableau_input = repo_root / "examples/artifacts/tableau/superstore_base.twb"
+    if not tableau_input.exists():
+        pytest.skip("Tableau sample not found")
+
+    # Run demonstration targeting tmp_path
+    run_demonstration(output_base_dir=tmp_path)
+
+    # Verify run directory was created under tmp_path
+    run_dirs = list(tmp_path.glob("run_*"))
+    assert len(run_dirs) == 1
+    run_dir = run_dirs[0]
+
+    expected_files = [
+        "run_manifest.json",
+        "workflow.json",
+        "execution.json",
+        "tableau_result.json",
+        "powerbi_result.json",
+        "provenance.json",
+        "synthesis.json",
+        "run_summary.md"
+    ]
+
+    for fname in expected_files:
+        fpath = run_dir / fname
+        assert fpath.exists(), f"Expected evidence file {fname} not found in {run_dir}"
+        if fname.endswith(".json"):
+            import json
+            with open(fpath, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                assert isinstance(data, (dict, list))
+        elif fname.endswith(".md"):
+            content = fpath.read_text(encoding="utf-8")
+            assert "# BIOrch Demo #1 — Run Summary" in content
+
+
+def test_runtime_demo_execution_metrics_and_concurrency_proof(tmp_path):
+    """Verify execution.json contains per-task execution timestamps, duration, thread ID, and concurrency proof."""
+    if not os.environ.get("DOTNET_ROOT") or not os.environ.get("BIORCH_TOM_DLL_PATH"):
+        pytest.skip("Power BI environment prerequisites not set")
+
+    repo_root = Path(__file__).resolve().parent.parent
+    tableau_input = repo_root / "examples/artifacts/tableau/superstore_base.twb"
+    if not tableau_input.exists():
+        pytest.skip("Tableau sample not found")
+
+    run_demonstration(output_base_dir=tmp_path)
+    run_dir = next(tmp_path.glob("run_*"))
+    execution_json_path = run_dir / "execution.json"
+
+    assert execution_json_path.exists()
+    import json
+    with open(execution_json_path, "r", encoding="utf-8") as f:
+        exec_data = json.load(f)
+
+    assert "task_execution_metrics" in exec_data
+    assert "concurrency_proof" in exec_data
+
+    metrics = exec_data["task_execution_metrics"]
+    assert "tableau_task" in metrics
+
+    t_metrics = metrics["tableau_task"]
+    assert "start_timestamp" in t_metrics
+    assert "end_timestamp" in t_metrics
+    assert "duration_seconds" in t_metrics
+    assert "thread_id" in t_metrics
+    assert "thread_name" in t_metrics
+    assert "status" in t_metrics
+
+    proof = exec_data["concurrency_proof"]
+    assert "overlap_detected" in proof
+    assert "distinct_threads_used" in proof
+    assert "parallel_execution_verified" in proof
+
+
+def test_timed_agent_executor_concurrency_proof():
+    """Directly test TimedAgentExecutor timing collection and concurrent execution metrics."""
+    from biorch.runtime_demo import TimedAgentExecutor
+    from biorch.core.result import Result, ResultStatus
+    metrics = {}
+
+    class MockInnerExecutor:
+        def __init__(self, agent_id, delay=0.01):
+            self.agent_id = agent_id
+            self.agent_definition = Agent(agent_id=agent_id, name=agent_id, role="test", allowed_tools=[], supported_operations=[])
+            self.delay = delay
+
+        def execute(self, task: Task) -> Result:
+            time.sleep(self.delay)
+            return Result(task_id=task.task_id, status=ResultStatus.SUCCESS, findings=[{"summary": {"test": 1}}])
+
+    exec1 = TimedAgentExecutor(MockInnerExecutor("agent1", delay=0.02), metrics)
+    exec2 = TimedAgentExecutor(MockInnerExecutor("agent2", delay=0.02), metrics)
+
+    t1 = Task(task_id="task1", objective="o1", agent_id="agent1", inputs={"tool_id": "t", "operation": "EXTRACT"}, status=TaskStatus.PENDING)
+    t2 = Task(task_id="task2", objective="o2", agent_id="agent2", inputs={"tool_id": "t", "operation": "EXTRACT"}, status=TaskStatus.PENDING)
+
+    import concurrent.futures
+    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+        f1 = executor.submit(exec1.execute, t1)
+        f2 = executor.submit(exec2.execute, t2)
+        concurrent.futures.wait([f1, f2])
+
+    assert "task1" in metrics
+    assert "task2" in metrics
+    assert metrics["task1"]["status"] == "SUCCESS"
+    assert metrics["task2"]["status"] == "SUCCESS"
+    assert "start_timestamp" in metrics["task1"]
+    assert "end_timestamp" in metrics["task1"]
+    assert "duration_seconds" in metrics["task1"]
+    assert "thread_id" in metrics["task1"]
+
+
+

@@ -32,11 +32,12 @@ def load_tom_assembly(dll_path: str = None):
     if not path:
         raise RuntimeError("TOM DLL path not provided and BIORCH_TOM_DLL_PATH not set.")
 
-    if not os.path.exists(path):
-        raise FileNotFoundError(f"TOM DLL not found at: {path}")
+    abs_path = os.path.abspath(path)
+    if not os.path.exists(abs_path):
+        raise FileNotFoundError(f"TOM DLL not found at: {abs_path}")
         
     import clr
     try:
-        clr.AddReference(path)
+        clr.AddReference(abs_path)
     except Exception as e:
-        raise RuntimeError(f"Failed to load TOM assembly from {path}") from e
+        raise RuntimeError(f"Failed to load TOM assembly from {abs_path}") from e
