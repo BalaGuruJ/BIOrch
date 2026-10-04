@@ -14,7 +14,7 @@ class DeterministicOrchestrator:
     Coordinates sequential execution of explicitly defined workflows through
     the DeterministicAgentExecutor without directly accessing lower-level gateways or tools.
     """
-    def __init__(self, agent_resolver_or_executor):
+    def __init__(self, agent_resolver_or_executor, review_policy=None, reviewer=None, max_retries: int = 0):
         if isinstance(agent_resolver_or_executor, AgentResolver):
             self.agent_resolver = agent_resolver_or_executor
         else:
@@ -24,6 +24,9 @@ class DeterministicOrchestrator:
             })
             self.agent_executor = agent_resolver_or_executor
         self.collected_artifacts: Dict[str, Any] = {}
+        self.review_policy = review_policy
+        self.reviewer = reviewer
+        self.max_retries = max_retries
 
     def run_with_handoff(self, workflow: Workflow) -> HandoffPayload:
         """
@@ -148,6 +151,8 @@ class DeterministicOrchestrator:
         Determines whether a step outcome represents an authorization or policy rejection
         rather than a runtime execution failure.
         """
+        if result.metadata and result.metadata.get("review", {}).get("final_approved") is False:
+            return True
         if hasattr(result, "status") and str(result.status).lower() in ("rejected", "resultstatus.rejected"):
             return True
 
@@ -166,6 +171,97 @@ class DeterministicOrchestrator:
             if any(ind in err_lower for ind in rejection_indicators):
                 return True
         return False
+
+    def _get_reviewer_and_retries(self, task: Task):
+        from biorch.review import Reviewer
+        task_review = task.metadata.get("review") if task.metadata else None
+        task_policy = task.metadata.get("review_policy") if task.metadata else None
+
+        reviewer = None
+        max_retries = self.max_retries
+
+        if task_review and isinstance(task_review, dict):
+            if "reviewer" in task_review:
+                reviewer = task_review["reviewer"]
+            if "max_retries" in task_review:
+                max_retries = int(task_review["max_retries"])
+        elif task_policy and isinstance(task_policy, dict):
+            if "reviewer" in task_policy:
+                reviewer = task_policy["reviewer"]
+            if "max_retries" in task_policy:
+                max_retries = int(task_policy["max_retries"])
+        elif task_policy and hasattr(task_policy, "evaluate"):
+            reviewer = task_policy
+
+        if not reviewer:
+            reviewer = self.reviewer
+        if not reviewer and self.review_policy:
+            if hasattr(self.review_policy, "evaluate"):
+                reviewer = self.review_policy
+            elif isinstance(self.review_policy, dict):
+                reviewer = self.review_policy.get("reviewer")
+                if "max_retries" in self.review_policy:
+                    max_retries = int(self.review_policy["max_retries"])
+
+        if isinstance(reviewer, list):
+            reviewer = Reviewer(rules=reviewer, max_retries=max_retries)
+
+        if reviewer and hasattr(reviewer, "max_retries") and reviewer.max_retries > 0 and max_retries == 0:
+            max_retries = reviewer.max_retries
+
+        return reviewer, max_retries
+
+    def _execute_task_with_review(self, task: Task) -> Result:
+        executor = self.agent_resolver.resolve(task.agent_id)
+        reviewer, max_retries = self._get_reviewer_and_retries(task)
+
+        if not reviewer:
+            return executor.execute(task)
+
+        attempt_number = 1
+        attempt_history = []
+
+        while True:
+            result = executor.execute(task)
+
+            # Hard execution failure or tool/security failure bypasses review retry
+            if result.status != ResultStatus.SUCCESS:
+                return result
+
+            review_result = reviewer.evaluate(task, result)
+
+            attempt_record = {
+                "attempt_number": attempt_number,
+                "reviewer_id": getattr(reviewer, "reviewer_id", "default_reviewer"),
+                "rule_results": [r.to_dict() for r in review_result.rule_results],
+                "correction_feedback": review_result.correction_feedback
+            }
+            attempt_history.append(attempt_record)
+
+            if result.metadata is None:
+                result.metadata = {}
+            result.metadata["review"] = {
+                "attempt_history": attempt_history,
+                "final_approved": review_result.approved
+            }
+
+            if review_result.approved:
+                return result
+
+            # Review rejected
+            if attempt_number > max_retries:
+                result.status = ResultStatus.FAILURE
+                if not result.errors:
+                    result.errors = []
+                if review_result.correction_feedback:
+                    result.errors.append(review_result.correction_feedback)
+                return result
+
+            # Retries remain: inject correction feedback into task.inputs["correction_feedback"]
+            if task.inputs is None:
+                task.inputs = {}
+            task.inputs["correction_feedback"] = review_result.correction_feedback
+            attempt_number += 1
 
     def execute(self, workflow: Workflow) -> WorkflowResult:
         """
@@ -226,8 +322,7 @@ class DeterministicOrchestrator:
         in_progress_tasks: Dict[str, Task] = {}
 
         def execute_task(task: Task) -> Result:
-            executor = self.agent_resolver.resolve(task.agent_id)
-            return executor.execute(task)
+            return self._execute_task_with_review(task)
 
         # Main execution loop
         with ThreadPoolExecutor() as executor:
@@ -357,18 +452,19 @@ class DeterministicOrchestrator:
                     else:
                         # Failure classification
                         is_essential = getattr(task, "is_essential", True)
+                        is_review_rejection = self._is_rejection(result)
                         if is_essential:
                             failed_task = tid
                             return self._create_terminal_failure(
                                 workflow_id, workflow_version,
-                                WorkflowResultStatus.REJECTED if self._is_rejection(result) else WorkflowResultStatus.FAILED,
+                                WorkflowResultStatus.REJECTED if is_review_rejection else WorkflowResultStatus.FAILED,
                                 completed_tasks, failed_task, {**pending_tasks, **in_progress_tasks}, step_results,
                                 executed_order, results, result.errors
                             )
                         else:
                             # Non-essential failure: record, block dependents, and continue
                             step_results[tid] = {
-                                "status": WorkflowResultStatus.FAILED.value,
+                                "status": WorkflowResultStatus.REJECTED.value if is_review_rejection else WorkflowResultStatus.FAILED.value,
                                 "findings": [],
                                 "errors": result.errors
                             }
@@ -425,6 +521,7 @@ class DeterministicOrchestrator:
         terminal_statuses = {
             WorkflowResultStatus.SUCCESS.value,
             WorkflowResultStatus.FAILED.value,
+            WorkflowResultStatus.REJECTED.value,
             TaskStatus.TIMEOUT.value,
             WorkflowResultStatus.NOT_EXECUTED.value
         }

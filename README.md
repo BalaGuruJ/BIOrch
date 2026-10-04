@@ -2,9 +2,9 @@
 
 Agent orchestration platform for BI metadata analysis and repository engineering.
 
-- **LAST_COMPLETED:** Phase 08 (Parallel Orchestration).
-- **ACTIVE:** Phase 09 (Review Loop).
-- **NEXT_PLANNED:** Phase 10 (LLM-Based Planning).
+- **LAST_COMPLETED:** Phase 09 (Review Loop).
+- **ACTIVE:** Phase 10 (LLM-Based Planning).
+- **NEXT_PLANNED:** Phase 11 (BI Comparison).
 
 Planned integrations:
 - TabUI — Tableau metadata extraction/analysis
