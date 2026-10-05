@@ -1,0 +1,95 @@
+{
+  "workflow_result_status": "SUCCESS",
+  "completed_tasks": [
+    "tableau_task",
+    "pbi_task"
+  ],
+  "step_results": {
+    "tableau_task": {
+      "status": "SUCCESS",
+      "findings": [
+        {
+          "source": "tableau",
+          "input_path": "/home/balaguruj8/BIOrch/examples/artifacts/tableau/superstore_base.twb",
+          "output_directory": "/tmp/biorch_runtime_demo/tableau",
+          "summary": {
+            "datasources_count": 3,
+            "tables_count": 5,
+            "columns_count": 33,
+            "worksheets_count": 21
+          }
+        }
+      ],
+      "errors": []
+    },
+    "pbi_task": {
+      "status": "SUCCESS",
+      "findings": [
+        {
+          "source": "powerbi",
+          "model_folder": "/home/balaguruj8/BIOrch/examples/artifacts/powerbi/AdventureWorks Sales/AdventureWorks Sales.SemanticModel",
+          "database_name": null,
+          "summary": {
+            "tables_count": 10,
+            "columns_count": 62,
+            "relationships_count": 9
+          }
+        }
+      ],
+      "errors": []
+    }
+  },
+  "task_execution_metrics": {
+    "tableau_task": {
+      "task_id": "tableau_task",
+      "agent_id": "tableau_agent",
+      "start_timestamp": "2026-10-04T18:43:07.497861+00:00",
+      "end_timestamp": "2026-10-04T18:43:09.278027+00:00",
+      "duration_seconds": 1.7802,
+      "thread_id": 139820825089728,
+      "thread_name": "ThreadPoolExecutor-0_1",
+      "status": "SUCCESS",
+      "errors": [],
+      "findings_summary": {
+        "datasources_count": 3,
+        "tables_count": 5,
+        "columns_count": 33,
+        "worksheets_count": 21
+      }
+    },
+    "pbi_task": {
+      "task_id": "pbi_task",
+      "agent_id": "powerbi_agent",
+      "start_timestamp": "2026-10-04T18:43:07.497537+00:00",
+      "end_timestamp": "2026-10-04T18:43:09.617382+00:00",
+      "duration_seconds": 2.1198,
+      "thread_id": 139820833482432,
+      "thread_name": "ThreadPoolExecutor-0_0",
+      "status": "SUCCESS",
+      "errors": [],
+      "findings_summary": {
+        "tables_count": 10,
+        "columns_count": 62,
+        "relationships_count": 9
+      }
+    }
+  },
+  "concurrency_proof": {
+    "parallel_execution_verified": true,
+    "overlap_detected": true,
+    "distinct_threads_used": true,
+    "pairwise_comparisons": [
+      {
+        "task_a": "tableau_task",
+        "task_b": "pbi_task",
+        "overlapping": true,
+        "different_threads": true,
+        "thread_a": 139820825089728,
+        "thread_b": 139820833482432,
+        "duration_a": 1.7802,
+        "duration_b": 2.1198
+      }
+    ],
+    "explanation": "Evaluated 2 tasks. Time overlap detected: True, Executed on distinct threads: True."
+  }
+}

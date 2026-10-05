@@ -1,0 +1,10 @@
+{
+  "planner_provenance": {
+    "plan_id": "plan_demo_01_runtime",
+    "intent": "Analyze the supplied Tableau workbook and Power BI model for their sales-related metadata in parallel.",
+    "compiler_version": "1.0",
+    "timestamp": "2026-10-04T18:36:47.741259+00:00"
+  },
+  "audit_checksum": "104efe842ce9d9b916df0835d4fa5c6b4fba344cf7c5a4f525c7ce071ee4dfa4",
+  "provenance_valid": true
+}

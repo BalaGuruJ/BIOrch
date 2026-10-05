@@ -1,0 +1,51 @@
+{
+  "workflow_id": "bi_parallel_analysis_workflow",
+  "version": "1.0",
+  "tasks": [
+    {
+      "task_id": "tableau_task",
+      "objective": "Extract Tableau workbook metadata",
+      "agent_id": "tableau_agent",
+      "dependencies": [],
+      "is_parallel_eligible": true,
+      "inputs": {
+        "tool_id": "tableau_extractor",
+        "version": "1.0",
+        "operation": "EXTRACT",
+        "resource": "examples/artifacts/tableau/superstore_base.twb",
+        "tool_inputs": {
+          "input_path": "/home/balaguruj8/BIOrch/examples/artifacts/tableau/superstore_base.twb",
+          "output_directory": "/tmp/biorch_runtime_demo/tableau"
+        }
+      },
+      "metadata": {
+        "planner_rationale": "Tableau workbook selected for structural datasource & worksheet extraction."
+      },
+      "status": "pending"
+    },
+    {
+      "task_id": "pbi_task",
+      "objective": "Analyze Power BI semantic model",
+      "agent_id": "powerbi_agent",
+      "dependencies": [],
+      "is_parallel_eligible": true,
+      "inputs": {
+        "tool_id": "powerbi_adapter",
+        "version": "1.0",
+        "operation": "ANALYZE",
+        "resource": "examples/artifacts/powerbi/AdventureWorks Sales/AdventureWorks Sales.SemanticModel",
+        "tool_inputs": {
+          "model_folder": "/home/balaguruj8/BIOrch/examples/artifacts/powerbi/AdventureWorks Sales/AdventureWorks Sales.SemanticModel"
+        }
+      },
+      "metadata": {
+        "planner_rationale": "Power BI semantic model selected for TOM tabular entity & relationship analysis."
+      },
+      "status": "pending"
+    }
+  ],
+  "parallel_eligible_tasks": [
+    "tableau_task",
+    "pbi_task"
+  ]
+}

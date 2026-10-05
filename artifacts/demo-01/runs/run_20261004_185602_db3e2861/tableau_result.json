@@ -1,0 +1,21 @@
+{
+  "tool_id": "tableau_extractor",
+  "status": "SUCCESS",
+  "result_payload": {
+    "status": "SUCCESS",
+    "findings": [
+      {
+        "source": "tableau",
+        "input_path": "/home/balaguruj8/BIOrch/examples/artifacts/tableau/superstore_base.twb",
+        "output_directory": "/tmp/biorch_runtime_demo/tableau",
+        "summary": {
+          "datasources_count": 3,
+          "tables_count": 5,
+          "columns_count": 33,
+          "worksheets_count": 21
+        }
+      }
+    ],
+    "errors": []
+  }
+}
