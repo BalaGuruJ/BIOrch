@@ -5,7 +5,10 @@ from __future__ import annotations
 from dataclasses import dataclass
 from collections.abc import Iterable
 
-from .canonical_entities import CanonicalEntities
+from .canonical_entities import (
+    CanonicalEntities, Column, Datasource, Table, Worksheet,
+    TableLogicalRelationship,
+)
 from .relationships import (
     ColumnFieldRelationship,
     ColumnFieldResolutionIssue,
@@ -114,6 +117,8 @@ def _relationship_key(relationship) -> tuple[str, str]:
         return relationship.field_id, relationship.column_instance_id
     if isinstance(relationship, ColumnInstanceWorksheetRelationship):
         return relationship.column_instance_id, relationship.worksheet_id
+    if isinstance(relationship, TableLogicalRelationship):
+        return relationship.first_table_id, relationship.second_table_id
     raise TypeError(f"Unsupported relationship type: {type(relationship).__name__}")
 
 
@@ -134,6 +139,7 @@ def validate_v1_relationships(
     column_fields: Iterable[ColumnFieldRelationship] = (),
     field_column_instances: Iterable[FieldColumnInstanceRelationship] = (),
     column_instance_worksheets: Iterable[ColumnInstanceWorksheetRelationship] = (),
+    logical_relationships: Iterable[TableLogicalRelationship] = (),
     resolution_issues: Iterable[object] = (),
 ) -> ValidationResult:
     """Report V1 entity, grain, and foreign-key violations without repair."""
@@ -165,6 +171,7 @@ def validate_v1_relationships(
         ("column_fields", tuple(column_fields), ("columns", "fields")),
         ("field_column_instances", tuple(field_column_instances), ("fields", "column_instances")),
         ("column_instance_worksheets", tuple(column_instance_worksheets), ("column_instances", "worksheets")),
+        ("logical_relationships", tuple(logical_relationships), ("tables", "tables")),
     )
     for dataset, relationships, target_datasets in datasets:
         seen: set[tuple[str, str]] = set()

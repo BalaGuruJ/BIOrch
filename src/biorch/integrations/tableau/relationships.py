@@ -6,8 +6,13 @@ from dataclasses import dataclass, replace
 
 from collections.abc import Mapping
 
-from .canonical_entities import CanonicalEntities, Column, Datasource, Table, Worksheet
+from .canonical_entities import (
+    CanonicalEntities, Column, Datasource, Table, Worksheet,
+    TableLogicalRelationship, TableLogicalRelationshipResolutionIssue
+)
 from .entities import DerivationStatus, EvidenceType, SourceEvidence
+
+# ... (rest of the file content) ...
 
 
 @dataclass(frozen=True)
@@ -634,9 +639,66 @@ def resolve_column_to_field(entities: CanonicalEntities) -> ColumnFieldResolutio
                 _add_relationship_evidence(relationships[key], evidence)
                 if key in relationships else relationship
             )
-    return ColumnFieldResolution(
-        tuple(relationships[key] for key in sorted(relationships)),
-        tuple(sorted(issues, key=lambda issue: (
-            issue.column_id or "", _evidence_order_key(issue.evidence), issue.reason,
-        ))),
-    )
+@dataclass(frozen=True)
+class TableLogicalRelationshipResolution:
+    relationships: tuple[TableLogicalRelationship, ...]
+    issues: tuple[TableLogicalRelationshipResolutionIssue, ...]
+
+
+def resolve_table_logical_relationship(
+    entities: CanonicalEntities, all_evidence: Iterable[SourceEvidence]
+) -> TableLogicalRelationshipResolution:
+    """Resolve logical relationships using object-to-relation mapping."""
+    relationships: dict[str, TableLogicalRelationship] = {}
+    issues: list[TableLogicalRelationshipResolutionIssue] = []
+
+    # 1. Build object mapping: object_id -> relation_locator
+    object_map: dict[str, str] = {}
+    for evidence in all_evidence:
+        if evidence.evidence_type == EvidenceType.OBJECT:
+            obj_id = evidence.source_attributes.get("id")
+            if isinstance(obj_id, str):
+                object_map[obj_id] = evidence.source_locator
+
+    # 2. Resolve relationships
+    for evidence in all_evidence:
+        if evidence.evidence_type != EvidenceType.LOGICAL_RELATIONSHIP:
+            continue
+            
+        first_end_point = evidence.source_attributes.get("first-end-point")
+        second_end_point = evidence.source_attributes.get("second-end-point")
+        if isinstance(first_end_point, list): first_end_point = first_end_point[0]
+        if isinstance(second_end_point, list): second_end_point = second_end_point[0]
+        
+        first_obj_id = first_end_point.get("object-id") if isinstance(first_end_point, Mapping) else None
+        second_obj_id = second_end_point.get("object-id") if isinstance(second_end_point, Mapping) else None
+
+        if not first_obj_id or not second_obj_id:
+            issues.append(TableLogicalRelationshipResolutionIssue(evidence.source_locator, None, "missing object-id", evidence, "first or second end point object-id missing"))
+            continue
+
+        # Map to Table
+        first_table = next((t for t in entities.tables for e in t.source_evidence if object_map.get(first_obj_id, "").startswith(e.source_locator)), None)
+        second_table = next((t for t in entities.tables for e in t.source_evidence if object_map.get(second_obj_id, "").startswith(e.source_locator)), None)
+        
+        if not first_table or not second_table:
+            issues.append(TableLogicalRelationshipResolutionIssue(evidence.source_locator, None, first_obj_id if not first_table else second_obj_id, evidence, "table not found"))
+            continue
+            
+        # Datasource check
+        if first_table.datasource_id != second_table.datasource_id:
+            issues.append(TableLogicalRelationshipResolutionIssue(evidence.source_locator, first_table.datasource_id, first_obj_id, evidence, "cross-datasource logical relationship"))
+            continue
+            
+        # Commutative Identity
+        from .identity import LogicalRelationshipIdentity, canonical_id_for
+        identity = LogicalRelationshipIdentity(first_table.datasource_id, first_table.canonical_id, second_table.canonical_id)
+        canonical_id = canonical_id_for(identity)
+        
+        # Expression raw (Simplified for now - needs proper C14N per design)
+        expression = evidence.source_attributes.get("expression", {}).get("#text", "")
+        
+        rel = TableLogicalRelationship(canonical_id, first_table.datasource_id, first_table.canonical_id, second_table.canonical_id, expression, source_evidence=frozenset({evidence}))
+        relationships[canonical_id] = rel
+        
+    return TableLogicalRelationshipResolution(tuple(relationships.values()), tuple(issues))

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterable, Mapping
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
 import re
 
 from .entities import EvidenceType, SourceEvidence
@@ -16,6 +16,34 @@ from .identity import (
     TableIdentity,
     WorksheetIdentity,
 )
+
+
+@dataclass(frozen=True)
+class TableLogicalRelationship:
+    """Canonical representation of a Tableau logical-layer relationship ('noodle').
+
+    Represents a binary, context-aware semantic association between two logical
+    tables within a single datasource.
+    """
+
+    canonical_id: str
+    datasource_id: str
+    first_table_id: str
+    second_table_id: str
+    expression_raw: str
+    cardinality: Optional[str] = None
+    source_evidence: frozenset[SourceEvidence] = field(default_factory=frozenset)
+
+
+@dataclass(frozen=True)
+class TableLogicalRelationshipResolutionIssue:
+    """Represents a failure to resolve a relationship endpoint to a canonical Table."""
+
+    relationship_locator: str
+    datasource_id: Optional[str]
+    missing_endpoint_object_id: str
+    evidence: SourceEvidence
+    reason: str
 
 
 @dataclass(frozen=True)

@@ -15,7 +15,7 @@ from .loader import load_workbook
 from .relationships import (
     resolve_column_instance_to_worksheet, resolve_column_to_field,
     resolve_datasource_to_table, resolve_field_to_column_instance,
-    resolve_table_to_column,
+    resolve_table_to_column, resolve_table_logical_relationship,
 )
 from .validation import ValidationResult, validate_v1_relationships
 from .writer import write_v1_csv, write_v1_json
@@ -43,9 +43,10 @@ def run_pipeline(input_path: str | Path, output_directory: str | Path) -> tuple[
     field_column_instances = resolve_field_to_column_instance(entities)
     column_instance_worksheets = resolve_column_instance_to_worksheet(entities)
     column_fields = resolve_column_to_field(entities)
+    logical_relationships = resolve_table_logical_relationship(entities, evidence)
     resolution_issues = (
         datasource_tables.issues + table_columns.issues + field_column_instances.issues
-        + column_instance_worksheets.issues + column_fields.issues
+        + column_instance_worksheets.issues + column_fields.issues + logical_relationships.issues
     )
     integrity = validate_v1_relationships(
         entities,
@@ -54,6 +55,7 @@ def run_pipeline(input_path: str | Path, output_directory: str | Path) -> tuple[
         column_fields=column_fields.relationships,
         field_column_instances=field_column_instances.relationships,
         column_instance_worksheets=column_instance_worksheets.relationships,
+        logical_relationships=logical_relationships.relationships,
         resolution_issues=resolution_issues,
     )
 
@@ -66,6 +68,7 @@ def run_pipeline(input_path: str | Path, output_directory: str | Path) -> tuple[
             column_fields=column_fields.relationships,
             field_column_instances=field_column_instances.relationships,
             column_instance_worksheets=column_instance_worksheets.relationships,
+            logical_relationships=logical_relationships.relationships,
             validation_result=integrity,
         )
         
@@ -77,6 +80,7 @@ def run_pipeline(input_path: str | Path, output_directory: str | Path) -> tuple[
             column_fields=column_fields.relationships,
             field_column_instances=field_column_instances.relationships,
             column_instance_worksheets=column_instance_worksheets.relationships,
+            logical_relationships=logical_relationships.relationships,
             validation_result=integrity,
         )
         written = list(written_csvs) + [json_path]

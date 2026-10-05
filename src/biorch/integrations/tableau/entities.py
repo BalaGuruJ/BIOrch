@@ -12,6 +12,8 @@ class EvidenceType(Enum):
     METADATA_RECORD = auto()
     COLUMN_INSTANCE = auto()
     WORKSHEET = auto()
+    OBJECT = auto()
+    LOGICAL_RELATIONSHIP = auto()
     UNKNOWN = auto()
 
 

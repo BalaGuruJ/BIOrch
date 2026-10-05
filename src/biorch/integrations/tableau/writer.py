@@ -13,7 +13,7 @@ from .canonical_entities import CanonicalEntities
 from .relationships import (
     ColumnFieldRelationship, ColumnInstanceWorksheetRelationship,
     DatasourceTableRelationship, FieldColumnInstanceRelationship,
-    TableColumnRelationship,
+    TableColumnRelationship, TableLogicalRelationship,
 )
 from .validation import ValidationResult, validate_v1_relationships
 from .entities import FrozenDict
@@ -44,6 +44,7 @@ RELATIONSHIP_DATASETS = (
     ("column_fields.csv", ("column_id", "field_id")),
     ("field_column_instances.csv", ("field_id", "column_instance_id")),
     ("column_instance_worksheets.csv", ("column_instance_id", "worksheet_id")),
+    ("logical_relationships.csv", ("canonical_id", "datasource_id", "first_table_id", "second_table_id", "expression_raw", "cardinality")),
 )
 
 
@@ -80,18 +81,20 @@ def write_v1_csv(
     column_fields: Iterable[ColumnFieldRelationship] = (),
     field_column_instances: Iterable[FieldColumnInstanceRelationship] = (),
     column_instance_worksheets: Iterable[ColumnInstanceWorksheetRelationship] = (),
+    logical_relationships: Iterable[TableLogicalRelationship] = (),
     validation_result: ValidationResult | None = None,
 ) -> tuple[Path, ...]:
     """Write only a validated V1 graph, without resolution or repair."""
     relationship_values = tuple(tuple(values) for values in (
         datasource_tables, table_columns, column_fields, field_column_instances,
-        column_instance_worksheets,
+        column_instance_worksheets, logical_relationships,
     ))
     calculated_validation = validate_v1_relationships(
         entities,
         datasource_tables=relationship_values[0], table_columns=relationship_values[1],
         column_fields=relationship_values[2], field_column_instances=relationship_values[3],
         column_instance_worksheets=relationship_values[4],
+        logical_relationships=relationship_values[5],
     )
     if validation_result is None:
         validation_result = calculated_validation
@@ -131,12 +134,14 @@ def write_v1_json(
     column_fields: Iterable[ColumnFieldRelationship] = (),
     field_column_instances: Iterable[FieldColumnInstanceRelationship] = (),
     column_instance_worksheets: Iterable[ColumnInstanceWorksheetRelationship] = (),
+    logical_relationships: Iterable[TableLogicalRelationship] = (),
     validation_result: ValidationResult | None = None,
 ) -> Path:
     """Serialize the V1 graph to a single validated JSON file."""
     relationship_values = (
         list(datasource_tables), list(table_columns), list(column_fields),
-        list(field_column_instances), list(column_instance_worksheets)
+        list(field_column_instances), list(column_instance_worksheets),
+        list(logical_relationships),
     )
     # Validation logic same as CSV writer
     calculated_validation = validate_v1_relationships(
@@ -144,6 +149,7 @@ def write_v1_json(
         datasource_tables=relationship_values[0], table_columns=relationship_values[1],
         column_fields=relationship_values[2], field_column_instances=relationship_values[3],
         column_instance_worksheets=relationship_values[4],
+        logical_relationships=relationship_values[5],
     )
     if validation_result is None:
         validation_result = calculated_validation
@@ -167,7 +173,8 @@ def write_v1_json(
                 "table_columns": relationship_values[1],
                 "column_fields": relationship_values[2],
                 "field_column_instances": relationship_values[3],
-                "column_instance_worksheets": relationship_values[4]
+                "column_instance_worksheets": relationship_values[4],
+                "logical_relationships": relationship_values[5]
             },
             "validation": {
                 "issues": list(entities.issues),

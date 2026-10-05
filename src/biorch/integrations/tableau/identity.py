@@ -24,6 +24,11 @@ class IdentityType(str, Enum):
     FIELD = "field"
     COLUMN_INSTANCE = "column_instance"
     WORKSHEET = "worksheet"
+    LOGICAL_RELATIONSHIP = "logical_relationship"
+
+
+class ExtendedIdentityType(str, Enum):
+    LOGICAL_RELATIONSHIP = "logical_relationship"
 
 
 class SemanticIdentity(Protocol):
@@ -33,6 +38,28 @@ class SemanticIdentity(Protocol):
     def identity_type(self) -> IdentityType: ...
 
     def identity_tuple(self) -> tuple[str, ...]: ...
+
+
+@dataclass(frozen=True)
+class LogicalRelationshipIdentity:
+    """Commutative semantic identity for Tableau logical relationships."""
+
+    datasource_id: str
+    table_a_id: str
+    table_b_id: str
+
+    def __post_init__(self):
+        # Enforce canonical lexical order to guarantee commutativity
+        if self.table_a_id > self.table_b_id:
+            object.__setattr__(self, "table_a_id", self.table_b_id)
+            object.__setattr__(self, "table_b_id", self.table_a_id)
+
+    @property
+    def identity_type(self) -> str:
+        return ExtendedIdentityType.LOGICAL_RELATIONSHIP.value
+
+    def identity_tuple(self) -> tuple[str, ...]:
+        return (self.datasource_id, self.table_a_id, self.table_b_id)
 
 
 @dataclass(frozen=True)

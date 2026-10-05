@@ -1,0 +1,78 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "BI Comparison Report",
+  "description": "A structural cross-platform comparison report between Tableau and Power BI canonical metadata.",
+  "type": "object",
+  "required": [
+    "report_metadata",
+    "table_comparison",
+    "column_comparison",
+    "relationship_comparison",
+    "summary"
+  ],
+  "properties": {
+    "report_metadata": {
+      "type": "object",
+      "required": ["report_id", "timestamp", "tableau_source", "powerbi_source"],
+      "properties": {
+        "report_id": {"type": "string"},
+        "timestamp": {"type": "string", "format": "date-time"},
+        "tableau_source": {"type": "string"},
+        "powerbi_source": {"type": "string"}
+      }
+    },
+    "table_comparison": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["state", "tableau_key", "powerbi_key"],
+        "properties": {
+          "state": {"enum": ["MATCHED", "TABLEAU_ONLY", "POWERBI_ONLY", "DIFFERENT"]},
+          "tableau_key": {"type": "string"},
+          "powerbi_key": {"type": "string"}
+        }
+      }
+    },
+    "column_comparison": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["state", "tableau_key", "powerbi_key"],
+        "properties": {
+          "state": {"enum": ["MATCHED", "TABLEAU_ONLY", "POWERBI_ONLY", "DIFFERENT"]},
+          "tableau_key": {"type": "string"},
+          "powerbi_key": {"type": "string"}
+        }
+      }
+    },
+    "relationship_comparison": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["state", "tableau_key", "powerbi_key"],
+        "properties": {
+          "state": {"enum": ["MATCHED", "TABLEAU_ONLY", "POWERBI_ONLY", "DIFFERENT"]},
+          "tableau_key": {"type": "string"},
+          "powerbi_key": {"type": "string"}
+        }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "required": ["matched", "different", "tableau_only", "powerbi_only"],
+      "properties": {
+        "matched": {"type": "integer"},
+        "different": {"type": "integer"},
+        "tableau_only": {"type": "integer"},
+        "powerbi_only": {"type": "integer"}
+      }
+    },
+    "non_comparable": {
+      "type": "object",
+      "properties": {
+        "tableau": {"type": "array", "items": {"type": "string"}},
+        "powerbi": {"type": "array", "items": {"type": "string"}}
+      }
+    }
+  }
+}

@@ -132,5 +132,29 @@ def extract_evidence(file_path: str, loader_result: LoaderResult) -> List[Source
             evidence_type=EvidenceType.WORKSHEET,
             derivation_status=DerivationStatus.DIRECT
         ))
+
+    # G. OBJECTS
+    for obj in root.xpath("//object-graph/objects/object"):
+        evidence_list.append(SourceEvidence(
+            source_file=file_path,
+            representation="xml",
+            source_structure="object",
+            source_locator=tree.getpath(obj),
+            source_attributes=_get_element_attributes(obj),
+            evidence_type=EvidenceType.OBJECT,
+            derivation_status=DerivationStatus.DIRECT
+        ))
+
+    # H. LOGICAL_RELATIONSHIPS
+    for rel in root.xpath("//object-graph/relationships/relationship"):
+        evidence_list.append(SourceEvidence(
+            source_file=file_path,
+            representation="xml",
+            source_structure="logical-relationship",
+            source_locator=tree.getpath(rel),
+            source_attributes=_get_element_attributes(rel),
+            evidence_type=EvidenceType.LOGICAL_RELATIONSHIP,
+            derivation_status=DerivationStatus.DIRECT
+        ))
         
     return evidence_list

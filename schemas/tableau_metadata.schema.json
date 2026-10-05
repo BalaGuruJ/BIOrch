@@ -23,13 +23,14 @@
         },
         "relationships": {
           "type": "object",
-          "required": ["datasource_tables", "table_columns", "column_fields", "field_column_instances", "column_instance_worksheets"],
+          "required": ["datasource_tables", "table_columns", "column_fields", "field_column_instances", "column_instance_worksheets", "logical_relationships"],
           "properties": {
             "datasource_tables": {"type": "array", "items": {"$ref": "#/$defs/datasource_table"}},
             "table_columns": {"type": "array", "items": {"$ref": "#/$defs/table_column"}},
             "column_fields": {"type": "array", "items": {"$ref": "#/$defs/column_field"}},
             "field_column_instances": {"type": "array", "items": {"$ref": "#/$defs/field_column_instance"}},
-            "column_instance_worksheets": {"type": "array", "items": {"$ref": "#/$defs/column_instance_worksheet"}}
+            "column_instance_worksheets": {"type": "array", "items": {"$ref": "#/$defs/column_instance_worksheet"}},
+            "logical_relationships": {"type": "array", "items": {"$ref": "#/$defs/logical_relationship"}}
           }
         },
         "validation": {
@@ -54,6 +55,7 @@
     "table_column": {"type": "object", "required": ["table_id", "column_id"], "properties": {"table_id": {"type": "string"}, "column_id": {"type": "string"}}},
     "column_field": {"type": "object", "required": ["column_id", "field_id"], "properties": {"column_id": {"type": "string"}, "field_id": {"type": "string"}}},
     "field_column_instance": {"type": "object", "required": ["field_id", "column_instance_id"], "properties": {"field_id": {"type": "string"}, "column_instance_id": {"type": "string"}}},
-    "column_instance_worksheet": {"type": "object", "required": ["column_instance_id", "worksheet_id"], "properties": {"column_instance_id": {"type": "string"}, "worksheet_id": {"type": "string"}}}
+    "column_instance_worksheet": {"type": "object", "required": ["column_instance_id", "worksheet_id"], "properties": {"column_instance_id": {"type": "string"}, "worksheet_id": {"type": "string"}}},
+    "logical_relationship": {"type": "object", "required": ["canonical_id", "datasource_id", "first_table_id", "second_table_id", "expression_raw"], "properties": {"canonical_id": {"type": "string"}, "datasource_id": {"type": "string"}, "first_table_id": {"type": "string"}, "second_table_id": {"type": "string"}, "expression_raw": {"type": "string"}, "cardinality": {"type": "string"}}}
   }
 }
