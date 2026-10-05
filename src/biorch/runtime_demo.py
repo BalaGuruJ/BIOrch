@@ -13,6 +13,7 @@ import json
 import uuid
 import threading
 import time
+import shutil
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, Any, List, Optional
@@ -188,6 +189,16 @@ def run_demonstration(output_base_dir: Optional[Path] = None) -> int:
 
     # 1. Locate repository samples and check prerequisites
     repo_root = Path(__file__).resolve().parent.parent.parent
+    
+    # Clean previous run evidence
+    base_runs_dir = output_base_dir if output_base_dir else (repo_root / "artifacts" / "demo-01" / "runs")
+    if base_runs_dir.exists():
+        for item in base_runs_dir.iterdir():
+            if item.is_dir():
+                shutil.rmtree(item)
+            else:
+                item.unlink()
+
     tableau_input = repo_root / "examples/artifacts/tableau/superstore_base.twb"
     pbi_input = repo_root / "examples/artifacts/powerbi/AdventureWorks Sales/AdventureWorks Sales.SemanticModel"
 

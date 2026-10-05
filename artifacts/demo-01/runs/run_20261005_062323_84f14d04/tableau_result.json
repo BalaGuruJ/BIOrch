@@ -6,7 +6,7 @@
     "findings": [
       {
         "source": "tableau",
-        "input_path": "/home/balaguruj8/BIOrch/examples/artifacts/tableau/superstore_base.twb",
+        "input_path": "/home/bala2703guru/BIOrch/examples/artifacts/tableau/superstore_base.twb",
         "output_directory": "/tmp/biorch_runtime_demo/tableau",
         "summary": {
           "datasources_count": 3,

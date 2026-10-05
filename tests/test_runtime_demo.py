@@ -273,6 +273,36 @@ def test_runtime_demo_execution_metrics_and_concurrency_proof(tmp_path):
     assert "parallel_execution_verified" in proof
 
 
+def test_runtime_demo_cleanup_previous_runs(tmp_path):
+    """Verify run_demonstration cleans up old runs."""
+    repo_root = Path(__file__).resolve().parent.parent
+    tableau_input = repo_root / "examples/artifacts/tableau/superstore_base.twb"
+    if not tableau_input.exists():
+        pytest.skip("Tableau sample not found")
+        
+    runs_dir = tmp_path / "runs"
+    runs_dir.mkdir()
+    
+    # Create fake old runs
+    old_run1 = runs_dir / "old_run_1"
+    old_run1.mkdir()
+    (old_run1 / "data.txt").write_text("old")
+    
+    old_run2 = runs_dir / "old_run_2"
+    old_run2.mkdir()
+    (old_run2 / "data.txt").write_text("old")
+    
+    # Run demonstration
+    run_demonstration(output_base_dir=runs_dir)
+    
+    # Verify cleanup
+    current_runs = list(runs_dir.glob("run_*"))
+    assert len(current_runs) == 1
+    
+    assert not old_run1.exists()
+    assert not old_run2.exists()
+
+
 def test_timed_agent_executor_concurrency_proof():
     """Directly test TimedAgentExecutor timing collection and concurrent execution metrics."""
     from biorch.runtime_demo import TimedAgentExecutor

@@ -6,7 +6,7 @@
     "findings": [
       {
         "source": "powerbi",
-        "model_folder": "/home/balaguruj8/BIOrch/examples/artifacts/powerbi/AdventureWorks Sales/AdventureWorks Sales.SemanticModel",
+        "model_folder": "/home/bala2703guru/BIOrch/examples/artifacts/powerbi/AdventureWorks Sales/AdventureWorks Sales.SemanticModel",
         "database_name": null,
         "summary": {
           "tables_count": 10,

@@ -11,7 +11,7 @@
       "findings": [
         {
           "source": "tableau",
-          "input_path": "/home/balaguruj8/BIOrch/examples/artifacts/tableau/superstore_base.twb",
+          "input_path": "/home/bala2703guru/BIOrch/examples/artifacts/tableau/superstore_base.twb",
           "output_directory": "/tmp/biorch_runtime_demo/tableau",
           "summary": {
             "datasources_count": 3,
@@ -31,7 +31,7 @@
       "findings": [
         {
           "source": "powerbi",
-          "model_folder": "/home/balaguruj8/BIOrch/examples/artifacts/powerbi/AdventureWorks Sales/AdventureWorks Sales.SemanticModel",
+          "model_folder": "/home/bala2703guru/BIOrch/examples/artifacts/powerbi/AdventureWorks Sales/AdventureWorks Sales.SemanticModel",
           "database_name": null,
           "summary": {
             "tables_count": 10,
@@ -49,7 +49,7 @@
       "task_id": "tableau_task",
       "data": {
         "source": "tableau",
-        "input_path": "/home/balaguruj8/BIOrch/examples/artifacts/tableau/superstore_base.twb",
+        "input_path": "/home/bala2703guru/BIOrch/examples/artifacts/tableau/superstore_base.twb",
         "output_directory": "/tmp/biorch_runtime_demo/tableau",
         "summary": {
           "datasources_count": 3,
@@ -63,7 +63,7 @@
       "task_id": "pbi_task",
       "data": {
         "source": "powerbi",
-        "model_folder": "/home/balaguruj8/BIOrch/examples/artifacts/powerbi/AdventureWorks Sales/AdventureWorks Sales.SemanticModel",
+        "model_folder": "/home/bala2703guru/BIOrch/examples/artifacts/powerbi/AdventureWorks Sales/AdventureWorks Sales.SemanticModel",
         "database_name": null,
         "summary": {
           "tables_count": 10,
@@ -79,12 +79,12 @@
     "workflow_version": "1.0",
     "validation_passed": true,
     "execution_order": [
-      "tableau_task",
-      "pbi_task"
+      "pbi_task",
+      "tableau_task"
     ],
     "completed_steps": [
-      "tableau_task",
-      "pbi_task"
+      "pbi_task",
+      "tableau_task"
     ],
     "failed_step": null,
     "terminal_status": "SUCCESS",

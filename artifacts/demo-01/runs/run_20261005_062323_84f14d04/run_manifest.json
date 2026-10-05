@@ -1,0 +1,13 @@
+{
+  "run_id": "run_20261005_062323_84f14d04",
+  "demo_scenario": "BIOrch Demo #1 \u2014 Parallel Tableau & Power BI Metadata Extraction",
+  "start_timestamp": "2026-10-05T06:23:23.498565+00:00",
+  "end_timestamp": "2026-10-05T06:23:24.053665+00:00",
+  "overall_status": "SUCCESS",
+  "environment": {
+    "python_version": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
+    "platform": "linux",
+    "dotnet_root": "/usr/lib/dotnet",
+    "tom_dll_path": "/home/bala2703guru/BIOrch/.deps/microsoft.analysisservices/19.117.0/lib/net6.0/Microsoft.AnalysisServices.Tabular.dll"
+  }
+}

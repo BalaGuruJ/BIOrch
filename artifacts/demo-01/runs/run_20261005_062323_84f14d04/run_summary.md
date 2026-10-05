@@ -1,9 +1,9 @@
 # BIOrch Demo #1 — Run Summary
 
 ## Run Identifier
-- **Run ID:** `run_20261004_183312_90651c07`
-- **Start Time:** `2026-10-04T18:33:12.638198+00:00`
-- **End Time:** `2026-10-04T18:33:13.877501+00:00`
+- **Run ID:** `run_20261005_062323_84f14d04`
+- **Start Time:** `2026-10-05T06:23:23.498565+00:00`
+- **End Time:** `2026-10-05T06:23:24.053665+00:00`
 - **Overall Status:** **SUCCESS**
 
 ---
@@ -23,10 +23,10 @@
    - *Answer:* ['pbi_task', 'tableau_task'].
 
 5. **Were Tableau and Power BI actually executed concurrently?**
-   - *Answer:* Parallel-eligible by DAG definition (dependencies=[]); verified via execution intervals & thread identity.
-     - **tableau_task:** start=`2026-10-04T18:33:12.707369+00:00`, end=`2026-10-04T18:33:13.872822+00:00`, duration=`1.1654s`, thread=`138420255979200`
-     - **pbi_task:** start=`2026-10-04T18:33:12.639903+00:00`, end=`2026-10-04T18:33:12.707045+00:00`, duration=`0.0671s`, thread=`138420255979200`
-     - **Overlap Detected:** `False` | **Distinct Threads:** `False`
+   - *Answer:* Yes, verified empirically via runtime execution metrics (overlap detected on distinct worker threads).
+     - **tableau_task:** start=`2026-10-05T06:23:23.502086+00:00`, end=`2026-10-05T06:23:24.050013+00:00`, duration=`0.5479s`, thread=`133624744171200`
+     - **pbi_task:** start=`2026-10-05T06:23:23.500632+00:00`, end=`2026-10-05T06:23:23.529429+00:00`, duration=`0.0288s`, thread=`133686033286848`
+     - **Overlap Detected:** `True` | **Distinct Threads:** `True`
 
 6. **What were their statuses?**
    - *Answer:* Tableau status: **SUCCESS** | Power BI status: **SUCCESS**.
@@ -44,4 +44,4 @@
     - *Answer:* None. All components executed successfully.
 
 ---
-*Evidence bundle generated at: `/home/balaguruj8/BIOrch/artifacts/demo-01/runs/run_20261004_183312_90651c07`*
+*Evidence bundle generated at: `/home/bala2703guru/BIOrch/artifacts/demo-01/runs/run_20261005_062323_84f14d04`*

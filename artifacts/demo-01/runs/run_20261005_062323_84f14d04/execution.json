@@ -10,7 +10,7 @@
       "findings": [
         {
           "source": "powerbi",
-          "model_folder": "/home/balaguruj8/BIOrch/examples/artifacts/powerbi/AdventureWorks Sales/AdventureWorks Sales.SemanticModel",
+          "model_folder": "/home/bala2703guru/BIOrch/examples/artifacts/powerbi/AdventureWorks Sales/AdventureWorks Sales.SemanticModel",
           "database_name": null,
           "summary": {
             "tables_count": 10,
@@ -26,7 +26,7 @@
       "findings": [
         {
           "source": "tableau",
-          "input_path": "/home/balaguruj8/BIOrch/examples/artifacts/tableau/superstore_base.twb",
+          "input_path": "/home/bala2703guru/BIOrch/examples/artifacts/tableau/superstore_base.twb",
           "output_directory": "/tmp/biorch_runtime_demo/tableau",
           "summary": {
             "datasources_count": 3,
@@ -43,11 +43,11 @@
     "pbi_task": {
       "task_id": "pbi_task",
       "agent_id": "powerbi_agent",
-      "start_timestamp": "2026-10-04T18:18:54.666896+00:00",
-      "end_timestamp": "2026-10-04T18:18:57.559932+00:00",
-      "duration_seconds": 2.893,
-      "thread_id": 137282488936128,
-      "thread_name": "ThreadPoolExecutor-0_0",
+      "start_timestamp": "2026-10-05T06:23:23.500632+00:00",
+      "end_timestamp": "2026-10-05T06:23:23.529429+00:00",
+      "duration_seconds": 0.0288,
+      "thread_id": 133686033286848,
+      "thread_name": "ThreadPoolExecutor-35_0",
       "status": "SUCCESS",
       "errors": [],
       "findings_summary": {
@@ -59,11 +59,11 @@
     "tableau_task": {
       "task_id": "tableau_task",
       "agent_id": "tableau_agent",
-      "start_timestamp": "2026-10-04T18:18:57.560368+00:00",
-      "end_timestamp": "2026-10-04T18:18:58.713080+00:00",
-      "duration_seconds": 1.1527,
-      "thread_id": 137282488936128,
-      "thread_name": "ThreadPoolExecutor-0_0",
+      "start_timestamp": "2026-10-05T06:23:23.502086+00:00",
+      "end_timestamp": "2026-10-05T06:23:24.050013+00:00",
+      "duration_seconds": 0.5479,
+      "thread_id": 133624744171200,
+      "thread_name": "ThreadPoolExecutor-35_1",
       "status": "SUCCESS",
       "errors": [],
       "findings_summary": {
@@ -75,21 +75,21 @@
     }
   },
   "concurrency_proof": {
-    "parallel_execution_verified": false,
-    "overlap_detected": false,
-    "distinct_threads_used": false,
+    "parallel_execution_verified": true,
+    "overlap_detected": true,
+    "distinct_threads_used": true,
     "pairwise_comparisons": [
       {
         "task_a": "pbi_task",
         "task_b": "tableau_task",
-        "overlapping": false,
-        "different_threads": false,
-        "thread_a": 137282488936128,
-        "thread_b": 137282488936128,
-        "duration_a": 2.893,
-        "duration_b": 1.1527
+        "overlapping": true,
+        "different_threads": true,
+        "thread_a": 133686033286848,
+        "thread_b": 133624744171200,
+        "duration_a": 0.0288,
+        "duration_b": 0.5479
       }
     ],
-    "explanation": "Evaluated 2 tasks. Time overlap detected: False, Executed on distinct threads: False."
+    "explanation": "Evaluated 2 tasks. Time overlap detected: True, Executed on distinct threads: True."
   }
 }
