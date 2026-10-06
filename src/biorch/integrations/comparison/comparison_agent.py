@@ -1,55 +1,82 @@
 import json
-from datetime import datetime
+import jsonschema
+from datetime import datetime, timezone
 import uuid
+from enum import Enum
 from typing import List, Dict, Set
-from biorch.integrations.comparison.models import ComparisonState, ComparisonResult, ComparisonReport
+from biorch.integrations.comparison.models import ComparisonState, ComparisonResult, ComparisonReport, ReportMetadata
+from dataclasses import asdict
 
 class ComparisonAgent:
-    def __init__(self, tableau_metadata: dict, powerbi_metadata: dict):
+    def __init__(self, tableau_metadata: dict, powerbi_metadata: dict, schema_path: str = "schemas/comparison_report.schema.json"):
         self.tableau_metadata = tableau_metadata
         self.powerbi_metadata = powerbi_metadata
+        self.schema_path = schema_path
         self.tableau_tables = self._get_tableau_tables()
         self.pbi_tables = self._get_pbi_tables()
         self.tableau_columns = self._get_tableau_columns()
         self.pbi_columns = self._get_pbi_columns()
         self.tableau_relationships = self._get_tableau_relationships()
         self.pbi_relationships = self._get_pbi_relationships()
+        
+    def _validate(self, report: ComparisonReport):
+        with open(self.schema_path, "r") as f:
+            schema = json.load(f)
+        
+        # Need to convert dataclasses to dict for jsonschema validation
+        def dataclass_to_dict(obj):
+            if isinstance(obj, (list, tuple)):
+                return [dataclass_to_dict(i) for i in obj]
+            if isinstance(obj, dict):
+                return {k: dataclass_to_dict(v) for k, v in obj.items()}
+            if hasattr(obj, "__dataclass_fields__"):
+                return {k: dataclass_to_dict(v) for k, v in asdict(obj).items()}
+            if isinstance(obj, Enum):
+                return obj.value
+            return obj
+            
+        data = dataclass_to_dict(report)
+        jsonschema.validate(instance=data, schema=schema)
 
     def _get_tableau_tables(self) -> Dict[str, dict]:
         return {t["relation_name"] + ":" + t["connection_name"]: t 
-                for t in self.tableau_metadata["workbook_metadata"]["entities"]["tables"]}
+                for t in self.tableau_metadata.get("workbook_metadata", {}).get("entities", {}).get("tables", [])}
 
     def _get_pbi_tables(self) -> Dict[str, dict]:
-        return {t["name"]: t for t in self.powerbi_metadata["tables"]}
+        return {t["name"]: t for t in self.powerbi_metadata.get("tables", [])}
 
     def _get_tableau_columns(self) -> Dict[str, dict]:
         return {c["parent_name"] + ":" + c["remote_name"]: c 
-                for c in self.tableau_metadata["workbook_metadata"]["entities"]["columns"]}
+                for c in self.tableau_metadata.get("workbook_metadata", {}).get("entities", {}).get("columns", [])}
 
     def _get_pbi_columns(self) -> Dict[str, dict]:
-        # PBI columns need table association in the key to be unique, but PBI col ID is just col name? 
-        # Wait, the validator says col.id is unique. Let's see the PBI column entity.
-        # It's col.id. But PBI column keys should include table_id to match Tableau's parent_name.
-        # Let's map table_id to table_name.
-        table_map = {t["id"]: t["name"] for t in self.powerbi_metadata["tables"]}
-        return {table_map[c["table_id"]] + ":" + c["name"]: c for c in self.powerbi_metadata["columns"]}
+        table_map = {t["id"]: t["name"] for t in self.powerbi_metadata.get("tables", [])}
+        return {table_map.get(c["table_id"], "unknown") + ":" + c["name"]: c for c in self.powerbi_metadata.get("columns", [])}
 
     def _get_tableau_relationships(self) -> Dict[str, dict]:
-        # Tableau relationships seem to be complex (TableColumnRelationship, etc.)
-        # The TASK says: "source table, source column, target table, target column"
-        # Since I can't find a direct way to parse Tableau relationships here, 
-        # I'll simulate a basic representation or placeholder for now as the contract says:
-        # "Relationship comparison MUST consider at minimum: source table, source column, target table, target column"
-        # I will need to look at Tableau canonical JSON to see the structure of relationships.
-        return {}
+        # Tableau relationships: Table-Pair grain, commutative, expression_raw opaque.
+        relationships = {}
+        workbook_metadata = self.tableau_metadata.get("workbook_metadata", {})
+        relationships_data = workbook_metadata.get("relationships", {})
+        logical_relationships = relationships_data.get("logical_relationships", [])
+        
+        for r in logical_relationships:
+            # Deterministic, commutative Table-Pair key
+            t1 = r["first_table_id"]
+            t2 = r["second_table_id"]
+            if t1 > t2:
+                t1, t2 = t2, t1
+            key = f"{r['datasource_id']}:{t1}:{t2}"
+            relationships[key] = r
+        return relationships
 
     def _get_pbi_relationships(self) -> Dict[str, dict]:
-        table_map = {t["id"]: t["name"] for t in self.powerbi_metadata["tables"]}
-        col_map = {c["id"]: c["name"] for c in self.powerbi_metadata["columns"]}
+        table_map = {t["id"]: t["name"] for t in self.powerbi_metadata.get("tables", [])}
+        col_map = {c["id"]: c["name"] for c in self.powerbi_metadata.get("columns", [])}
         
         relationships = {}
-        for r in self.powerbi_metadata["relationships"]:
-            key = f"{table_map[r['from_table_id']]}:{col_map[r['from_column_id']]}->{table_map[r['to_table_id']]}:{col_map[r['to_column_id']]}"
+        for r in self.powerbi_metadata.get("relationships", []):
+            key = f"{table_map.get(r['from_table_id'], 'unknown')}:{col_map.get(r['from_column_id'], 'unknown')}->{table_map.get(r['to_table_id'], 'unknown')}:{col_map.get(r['to_column_id'], 'unknown')}"
             relationships[key] = r
         return relationships
 
@@ -103,15 +130,21 @@ class ComparisonAgent:
             "tableau_only": len([r for r in table_results + col_results + rel_results if r.state == ComparisonState.TABLEAU_ONLY]),
             "powerbi_only": len([r for r in table_results + col_results + rel_results if r.state == ComparisonState.POWERBI_ONLY])
         }
-
-        return ComparisonReport(
-            report_id=str(uuid.uuid4()),
-            timestamp=datetime.utcnow().isoformat(),
-            tableau_source="superstore",
-            powerbi_source="adventureworks",
+        
+        report = ComparisonReport(
+            report_metadata=ReportMetadata(
+                report_id=str(uuid.uuid4()),
+                timestamp=datetime.now(timezone.utc).isoformat(),
+                tableau_source="superstore",
+                powerbi_source="adventureworks",
+            ),
             table_comparison=table_results,
             column_comparison=col_results,
             relationship_comparison=rel_results,
             summary=summary,
             non_comparable={"tableau": ["CalculatedFields", "Worksheets"], "powerbi": ["DAX", "Measures"]}
         )
+        
+        # Validation
+        self._validate(report)
+        return report

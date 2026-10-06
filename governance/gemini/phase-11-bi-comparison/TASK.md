@@ -1,330 +1,217 @@
-# Phase 11 — BI Comparison
+# Phase 11 — BI Comparison Task
 
 ## Objective
 
 Implement the governed Phase 11 structural comparison capability for Tableau and Power BI.
 
-The implementation MUST consume the existing canonical Tableau and Power BI metadata artifacts and produce a deterministic machine-readable comparison report.
+The implementation MUST consume the existing canonical Tableau and Power BI metadata artifacts and produce the governed, deterministic comparison artifact defined by `contracts/comparison/COMPARISON_CONTRACT.md`.
 
-Phase 11 is a structural comparison capability.
-
-It MUST NOT attempt semantic equivalence, business-rule inference, fuzzy matching, or cross-platform expression translation.
+The approved Comparison Contract and frozen Tableau Logical Relationship architecture are authoritative. Do not reinterpret or extend them.
 
 ---
 
-## Prerequisites
-
-The following MUST already be complete:
-
-- Phase 11 BI Comparison investigation.
-- Phase 10 LLM-Based Planning closure.
-- Existing Tableau canonical metadata pipeline.
-- Existing Power BI canonical metadata pipeline.
-- Approved `BIORCH-COMPARISON-001` contract.
-
----
-
-## Important Sample Constraint
-
-The existing demonstration inputs are intentionally different BI datasets:
-
-- Tableau: Superstore sample workbook.
-- Power BI: AdventureWorks Sales sample.
-
-These datasets are NOT expected to be semantically equivalent.
-
-Phase 11 success MUST therefore be measured by correct structural classification rather than by achieving a high number of matches.
-
-The comparison engine MUST be capable of reporting legitimate unmatched structures.
-
----
-
-## Scope
+## 1. Scope
 
 ### In Scope
 
-1. Implement the deterministic comparison component.
-2. Implement comparison key generation.
-3. Compare Tables.
-4. Compare Columns.
-5. Compare Relationships.
-6. Classify comparison results as:
-   - `MATCHED`
-   - `TABLEAU_ONLY`
-   - `POWERBI_ONLY`
-   - `DIFFERENT`
-7. Segregate platform-specific non-comparable entities.
-8. Generate the governed comparison report.
-9. Create the finalized `schemas/comparison_report.schema.json`.
-10. Validate comparison inputs against existing canonical schemas.
-11. Validate comparison output against the new comparison schema.
-12. Add automated unit/integration tests.
-13. Execute a real Phase 11 comparison using the existing Tableau and Power BI samples.
+1. Deterministic comparison of:
+
+   * Tables
+   * Columns
+   * Relationships
+2. Comparison result states:
+
+   * `MATCHED`
+   * `TABLEAU_ONLY`
+   * `POWERBI_ONLY`
+   * `DIFFERENT`
+3. Deterministic comparison-key generation and normalization.
+4. Deterministic result ordering.
+5. Input validation against existing Tableau and Power BI canonical schemas.
+6. Governed comparison-artifact generation.
+7. Output validation against `schemas/comparison_report.schema.json`.
+8. Automated unit/integration tests.
+9. Real execution using the existing Tableau Superstore and Power BI AdventureWorks canonical artifacts.
+10. Runtime/orchestration wiring required for the existing BIOrch execution path, if required by the current repository architecture.
+
+### Explicitly Out of Scope
+
+* Semantic equivalence or business-domain inference.
+* Fuzzy, probabilistic, embedding-based, or AI-based matching.
+* DAX, M, or Tableau expression translation, execution, or AST parsing.
+* Worksheet, dashboard, visual, layout, or presentation comparison.
+* Excel or Phase 12 functionality.
+* Modification of existing Tableau/Power BI agent contracts.
+* Modification of existing canonical entity models.
+* Modification of frozen Tableau Logical Relationship architecture.
 
 ---
 
-## Explicitly Out of Scope
-
-DO NOT implement:
-
-- semantic equivalence
-- fuzzy matching
-- AI-based matching
-- synonym matching
-- business-domain inference
-- DAX translation
-- Tableau calculated-field translation
-- DAX vs Tableau calculation comparison
-- worksheet comparison
-- dashboard comparison
-- visual comparison
-- data-value comparison
-- data-quality comparison
-- Excel generation
-- end-user presentation formatting
-- modification of Tableau agent contracts
-- modification of Power BI agent contracts
-- modification of existing canonical entity models
-
----
-
-## Comparison Rules
-
-### Tables
-
-Compare tables using deterministic normalized comparison keys.
-
-Report:
-
-- matched tables
-- Tableau-only tables
-- Power BI-only tables
-
-A table-name match MUST NOT be described as semantic equivalence.
-
-### Columns
-
-Compare columns using:
-
-- parent table comparison key
-- column comparison key
-
-A column MUST NOT match solely because the column name is identical under different unmatched tables.
-
-### Relationships
-
-Compare relationships using deterministic structural keys derived from:
-
-- source table
-- source column
-- target table
-- target column
-
-Relationship direction MUST be preserved.
-
-Platform-specific relationship IDs MUST NOT be used as comparison keys.
-
----
-
-## Non-Comparable Structures
-
-The implementation MUST NOT compare:
+## 2. Relationship Rules
 
 ### Tableau
 
-- calculated-field expressions
-- worksheets
-- dashboards
-- visual/layout constructs
+Tableau logical relationships MUST:
+
+* Be compared at the non-directional Table-Pair grain.
+* Use the governed commutative canonical Table-Pair identity.
+* Remain binary and non-directional.
+* Preserve `expression_raw` as an opaque immutable payload.
+* NOT parse, evaluate, interpret, or decompose `expression_raw`.
+* NOT synthesize source/target column endpoints.
+* Treat column-pair interpretation as `OPAQUE_EXPRESSION_EVALUATION_DEFERRED`.
+
+The implementation MUST NOT attempt to make Tableau relationship representation conform to Power BI column-level relationship representation.
 
 ### Power BI
 
-- DAX expressions
-- M expressions
-- measures
-- calculation groups
-- calculation items
-- partitions
-- visual/report layout constructs
+Power BI relationships MAY use the native column-level relationship detail available in the canonical metadata.
 
-Non-comparable structures MUST NOT affect comparable-entity results.
+Power BI-specific relationship directionality or other structural properties MUST be preserved only where defined by the approved comparison contract.
+
+Power BI relationship handling MUST NOT impose column-level requirements on Tableau.
 
 ---
 
-## Determinism Requirements
+## 3. Structural Comparison Rules
+
+1. Structural key equality means structural correspondence only.
+2. Matching MUST use deterministic normalized comparison keys.
+3. Source-system IDs, runtime IDs, provenance IDs, memory addresses, or timestamps MUST NOT determine structural identity.
+4. Original source names MUST remain available for reporting.
+5. Platform-specific/non-comparable entities MUST remain segregated.
+6. The implementation MUST NOT invent additional comparison result states.
+7. The implementation MUST NOT silently reinterpret malformed or incomplete canonical metadata.
+
+---
+
+## 4. Determinism
 
 For identical canonical inputs:
 
-- comparison keys MUST be identical
-- comparison classifications MUST be identical
-- detailed result ordering MUST be identical
-- aggregate counts MUST be identical
+* Comparison keys MUST be identical.
+* Result classifications MUST be identical.
+* Result ordering MUST be identical.
+* Structural comparison content MUST be identical.
 
-Ordering MUST be deterministic.
+Generated timestamps and report IDs MAY differ, but MUST NOT affect structural comparison content.
 
-Runtime timestamps and generated report IDs MUST NOT affect structural comparison content.
-
----
-
-## Schema Requirements
-
-The existing provisional comparison schema MUST NOT be treated as final.
-
-The implementation MUST create the finalized:
-
-`schemas/comparison_report.schema.json`
-
-The finalized schema MUST:
-
-- explicitly define the comparison artifact
-- define required fields
-- define comparison states
-- define table comparison results
-- define column comparison results
-- define relationship comparison results
-- define summary counts
-- define provenance fields
-- reject structurally invalid reports
-
-Core comparison structures MUST NOT use unrestricted:
-
-`"additionalProperties": true`
+Determinism MUST be demonstrated by repeated execution using identical inputs.
 
 ---
 
-## Required Tests
+## 5. Required Validation & Tests
 
-Tests MUST cover at minimum:
+Tests MUST cover, at minimum:
 
 1. Matching tables.
 2. Tableau-only tables.
 3. Power BI-only tables.
-4. Matching columns.
+4. Matching columns under matching tables.
 5. Columns under unmatched tables.
 6. Matching relationships.
 7. Different relationships.
-8. Deterministic ordering.
-9. Non-comparable entity segregation.
-10. Invalid canonical input.
-11. Valid comparison report.
-12. Invalid comparison report.
-13. Repeated comparison producing identical structural output.
-14. Existing Tableau + Power BI sample execution.
+8. Tableau Table-Pair commutative identity.
+9. Tableau relationship non-directionality.
+10. Tableau `expression_raw` remaining opaque and unparsed.
+11. Tableau column-pair interpretation remaining deferred.
+12. Power BI native relationship detail handling.
+13. Deterministic ordering.
+14. Repeated execution producing identical structural comparison content.
+15. Non-comparable entity segregation.
+16. Invalid input rejection.
+17. Valid comparison-artifact schema validation.
 
-The tests MUST NOT assume that the Superstore and AdventureWorks samples are semantically equivalent.
-
----
-
-## Required Runtime Demonstration
-
-The implementation MUST perform one real comparison using:
-
-### Tableau
-
-The existing Superstore canonical metadata artifact produced by the Tableau pipeline.
-
-### Power BI
-
-The existing AdventureWorks Sales canonical metadata artifact produced by the Power BI pipeline.
-
-The demonstration MUST produce a comparison report containing:
-
-- source artifact references
-- table comparison results
-- column comparison results
-- relationship comparison results
-- non-comparable entity segregation where applicable
-- deterministic summary counts
-
-The demonstration MUST successfully validate the generated report against the comparison schema.
+The full existing regression suite MUST also pass.
 
 ---
 
-## Files / Areas Expected to Change
+## 6. Real Runtime Validation
 
-Expected implementation areas include only those required for:
+Execute the completed Phase 11 comparison against:
 
-- comparison contract consumption
-- comparison logic
-- comparison orchestration/wiring
-- comparison schema
-- comparison tests
+* Tableau: existing Superstore canonical artifact.
+* Power BI: existing AdventureWorks canonical artifact.
 
-The implementation MUST NOT modify existing Tableau or Power BI agent contracts or canonical models.
+The samples are intentionally different BI datasets.
 
-The implementation agent MUST report the exact files modified before completion.
+A low number of matches, including zero matches for an entity class, MUST NOT be treated as failure by itself. Correct deterministic classification is the criterion.
 
----
-
-## Acceptance Criteria
-
-Phase 11 implementation is accepted only if:
-
-1. `BIORCH-COMPARISON-001` is implemented as specified.
-2. The finalized comparison schema exists.
-3. The comparison component is implemented.
-4. Tableau canonical metadata can be consumed.
-5. Power BI canonical metadata can be consumed.
-6. Tables are deterministically compared.
-7. Columns are deterministically compared.
-8. Relationships are deterministically compared.
-9. Comparison states are correctly classified.
-10. Non-comparable platform-specific structures remain isolated.
-11. Provenance does not participate in comparison keys.
-12. Identical inputs produce identical structural comparison results.
-13. Required automated tests pass.
-14. The full existing test suite passes.
-15. A real comparison run succeeds against Superstore + AdventureWorks.
-16. The generated comparison report passes JSON-schema validation.
-17. No Tableau or Power BI agent contract was modified.
-18. No semantic equivalence is claimed between the two sample workbooks.
-19. No Phase 12 functionality is implemented.
+The runtime execution MUST demonstrate that the actual BIOrch comparison path can consume the canonical artifacts and produce the governed comparison artifact.
 
 ---
 
-## Execution Restrictions
+## 7. Implementation Constraints
 
-DO NOT:
+Before implementation, inspect the current repository only as necessary to identify the existing comparison component, orchestration path, canonical artifact interfaces, schema location, and test conventions.
 
-- modify existing agent contracts
-- modify canonical entity definitions
-- modify Phase 10 closure records
-- modify governance closure records
-- implement Phase 12
-- implement Excel/report presentation
-- introduce semantic or fuzzy matching
-- introduce AI-based comparison
-- execute DAX, M, or Tableau expressions
-- silently broaden the comparison scope
+Do NOT redesign existing architecture merely to accommodate Phase 11.
 
-If an architectural limitation or required change outside this task is discovered, STOP and report it rather than expanding scope.
+If an existing component/path already satisfies a requirement, reuse it rather than creating a competing implementation.
+
+If the repository contradicts an explicit requirement of the approved contract or frozen architecture:
+
+1. STOP the affected implementation.
+2. Report the exact contradiction and affected files.
+3. Do NOT modify the contract, architecture, or agent contracts to resolve it.
+4. Do NOT invent a workaround that changes the governed behavior.
 
 ---
 
-## Expected Response Format
+## 8. Protected Artifacts
+
+The following MUST NOT be modified as part of Phase 11 implementation:
+
+* `contracts/comparison/COMPARISON_CONTRACT.md`
+* `docs/architecture/BIORCH-ARCH-TABLEAU-LOGICAL-RELATIONSHIPS-001.md`
+* Existing Tableau agent contracts.
+* Existing Power BI agent contracts.
+* Existing canonical entity models.
+
+Any required change to these artifacts is outside this task and MUST be reported rather than implemented.
+
+---
+
+## 9. Acceptance Criteria
+
+Phase 11 is complete only when all are true:
+
+1. Implementation conforms to the approved `COMPARISON_CONTRACT.md`.
+2. Tables, columns, and relationships are structurally compared.
+3. Tableau relationships use the governed non-directional Table-Pair grain.
+4. Tableau `expression_raw` remains opaque and is never parsed or evaluated.
+5. Power BI native relationship detail is handled according to the contract.
+6. Only governed result states are produced.
+7. Platform-specific/non-comparable entities remain segregated.
+8. Input validation succeeds for valid canonical artifacts and rejects invalid input.
+9. Output passes `schemas/comparison_report.schema.json` validation.
+10. Repeated identical-input executions produce identical structural comparison content.
+11. Required automated tests pass.
+12. Full regression suite passes.
+13. Real Superstore + AdventureWorks comparison succeeds.
+14. Existing agent contracts and canonical models remain unchanged.
+15. No semantic, fuzzy, AI-based, or expression-based inference is introduced.
+16. No Phase 12 or presentation functionality is implemented.
+
+---
+
+## 10. Required Completion Report
 
 At completion, report:
 
 1. Files created.
 2. Files modified.
-3. Files deleted.
-4. Comparison architecture implemented.
-5. Exact comparison rules implemented.
-6. Exact schema implemented.
-7. Tests executed and exact results.
-8. Full-suite test result.
-9. Real Superstore + AdventureWorks comparison result.
-10. Generated comparison artifact location.
-11. Schema validation result.
-12. Confirmation that existing Tableau/Power BI contracts were not modified.
-13. Confirmation that no semantic comparison was implemented.
-14. Any deviations from this task.
-15. Any remaining limitations.
+3. Files deleted, if any.
+4. Implementation summary.
+5. Comparison rules implemented.
+6. Contract/architecture alignment confirmation.
+7. Automated test results.
+8. Full regression results.
+9. Determinism/repeated-run evidence.
+10. Schema validation evidence.
+11. Superstore + AdventureWorks runtime comparison summary.
+12. Confirmation that protected contracts/models were not modified.
+13. Any limitations or unresolved issues.
+14. Any deviation from this task, with explicit justification.
 
----
-
-## Completion State
-
-Phase 11 remains open until the implementation, automated tests, full regression suite, and real runtime comparison have all passed.
-
-No Phase 12 work may begin until Phase 11 is explicitly reviewed and closed.
+Do not claim Phase 11 completion if any acceptance criterion remains unmet.

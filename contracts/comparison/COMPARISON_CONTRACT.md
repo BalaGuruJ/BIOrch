@@ -87,18 +87,17 @@ Column matching MUST NOT rely on:
 
 ### 3.3 Relationships
 
-Relationships are compared using a deterministic structural relationship key derived from the participating table and column comparison keys.
+Relationships are compared using a deterministic structural relationship key.
 
-Relationship comparison MUST consider at minimum:
+- **Cross-Platform Grain:** The comparison MUST support structural comparison at the Table-Pair grain (TableA ↔ TableB).
+- **Platform-Specific Comparison:**
+    - **Power BI:** Where native column-level relationship detail (from_table:from_col → to_table:to_col) is available in the canonical metadata, it MAY be compared to ensure finer-grained structural correspondence.
+    - **Tableau:** Tableau logical relationships MUST be compared at the Table-Pair grain using the commutative canonical Table-Pair identifier defined in the `TABLEAU_AGENT_CONTRACT`. Column-pair comparison is marked as `OPAQUE_EXPRESSION_EVALUATION_DEFERRED`. The `expression_raw` payload MUST be preserved as an opaque, immutable string and MUST NOT be parsed or evaluated as part of relationship identity.
+- **Directionality:**
+    - **Power BI:** Relationship directionality MUST be preserved where defined.
+    - **Tableau:** Tableau logical relationships are binary and non-directional; directionality MUST NOT be enforced in the comparison representation.
 
-- source table
-- source column
-- target table
-- target column
-
-Relationship identity MUST NOT depend on platform-specific relationship IDs or provenance identifiers.
-
-Relationship directionality MUST be preserved in the comparison representation.
+Relationship identity MUST not depend on platform-specific relationship IDs or provenance identifiers.
 
 ---
 

@@ -639,6 +639,13 @@ def resolve_column_to_field(entities: CanonicalEntities) -> ColumnFieldResolutio
                 _add_relationship_evidence(relationships[key], evidence)
                 if key in relationships else relationship
             )
+
+    return ColumnFieldResolution(
+        tuple(relationships[key] for key in sorted(relationships)),
+        tuple(sorted(issues, key=lambda issue: (
+            issue.column_id or "", _evidence_order_key(issue.evidence), issue.reason,
+        ))),
+    )
 @dataclass(frozen=True)
 class TableLogicalRelationshipResolution:
     relationships: tuple[TableLogicalRelationship, ...]

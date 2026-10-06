@@ -15,7 +15,7 @@ from .loader import load_workbook
 from .relationships import (
     resolve_column_instance_to_worksheet, resolve_column_to_field,
     resolve_datasource_to_table, resolve_field_to_column_instance,
-    resolve_table_to_column, resolve_table_logical_relationship,
+    resolve_table_logical_relationship, resolve_table_to_column,
 )
 from .validation import ValidationResult, validate_v1_relationships
 from .writer import write_v1_csv, write_v1_json

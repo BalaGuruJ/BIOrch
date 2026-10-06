@@ -15,11 +15,15 @@ class ComparisonResult:
     powerbi_key: Optional[str]
 
 @dataclass
-class ComparisonReport:
+class ReportMetadata:
     report_id: str
     timestamp: str
     tableau_source: str
     powerbi_source: str
+
+@dataclass
+class ComparisonReport:
+    report_metadata: ReportMetadata
     table_comparison: List[ComparisonResult]
     column_comparison: List[ComparisonResult]
     relationship_comparison: List[ComparisonResult]

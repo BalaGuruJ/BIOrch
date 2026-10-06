@@ -21,5 +21,5 @@
 | 08.4H | Provenance Validation      | Provenance/Audit                | CLOSED              | TASK_08_4H.md | RESPONSE_08_4H.md | REVIEW_08_4H.md |
 | 09    | Review Loop                | Reviewer/validation workflow    | CLOSED              | TASK.md | RESPONSE.md | REVIEW.md |
 | 10    | LLM-Based Planning         | Adaptive task planning          | CLOSED              | TASK.md | RESPONSE.md | REVIEW.md |
-| 11    | BI Comparison              | Tableau ↔ Power BI analysis     | PLANNED             | TASK.md | RESPONSE.md | REVIEW.md |
+| 11    | BI Comparison              | Tableau ↔ Power BI analysis     | CLOSED              | TASK.md | RESPONSE.md | REVIEW.md |
 | 12    | Analysis-Ready Output      | Excel/report-ready output       | PLANNED             | TASK.md | RESPONSE.md | REVIEW.md |

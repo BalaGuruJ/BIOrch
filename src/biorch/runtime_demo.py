@@ -15,8 +15,20 @@ import threading
 import time
 import shutil
 from datetime import datetime, timezone
+import uuid
+import threading
+import time
+import shutil
+from dataclasses import asdict
 from pathlib import Path
 from typing import Dict, Any, List, Optional
+from enum import Enum
+
+def json_enum_serializer(obj: Any) -> Any:
+    """JSON default handler to serialize Enum types."""
+    if isinstance(obj, Enum):
+        return obj.value
+    raise TypeError(f"Object of type {obj.__class__.__name__} is not JSON serializable")
 
 from biorch.core.workflow import Workflow
 from biorch.core.task import Task, TaskStatus
@@ -28,6 +40,7 @@ from biorch.orchestration.agent_resolver import AgentResolver
 from biorch.orchestration.orchestrator import DeterministicOrchestrator
 from biorch.orchestration.synthesis import synthesize_result
 from biorch.orchestration.provenance_validator import ProvenanceValidator
+from biorch.integrations.comparison.comparison_agent import ComparisonAgent
 
 # Import existing integration pipelines
 from biorch.integrations.tableau.cli import run_pipeline as run_tableau_pipeline
@@ -112,6 +125,7 @@ class RuntimeDemoGateway(ToolGateway):
                 # Load metadata summary if available
                 meta_json = Path(output_dir) / "metadata.json"
                 meta_summary = {}
+                meta_content = {}
                 if meta_json.exists():
                     with open(meta_json, "r", encoding="utf-8") as f:
                         meta_content = json.load(f)
@@ -131,7 +145,8 @@ class RuntimeDemoGateway(ToolGateway):
                         "source": "tableau",
                         "input_path": str(input_path),
                         "output_directory": str(output_dir),
-                        "summary": meta_summary
+                        "summary": meta_summary,
+                        "canonical_metadata": meta_content
                     },
                     provenance={
                         "timestamp": os.getenv("BIORCH_TIMESTAMP", "2026-10-04T00:00:00"),
@@ -166,7 +181,8 @@ class RuntimeDemoGateway(ToolGateway):
                             "tables_count": tables_count,
                             "columns_count": columns_count,
                             "relationships_count": relationships_count
-                        }
+                        },
+                        "canonical_metadata": asdict(canonical_model)
                     },
                     provenance={
                         "timestamp": os.getenv("BIORCH_TIMESTAMP", "2026-10-04T00:00:00"),
@@ -337,6 +353,52 @@ def run_demonstration(output_base_dir: Optional[Path] = None) -> int:
     try:
         handoff = orchestrator.run_with_handoff(workflow)
         synthesis_result = synthesize_result(handoff)
+        
+        # Bridge to ComparisonAgent (Demo #2)
+        step_results = handoff.workflow_result.step_results
+        
+        # Check task statuses
+        tableau_status = step_results.get("tableau_task", {}).get("status")
+        pbi_status = step_results.get("pbi_task", {}).get("status")
+        
+        if tableau_status == "SUCCESS" and pbi_status == "SUCCESS":
+            tableau_findings = step_results.get("tableau_task", {}).get("findings", [{}])
+            pbi_findings = step_results.get("pbi_task", {}).get("findings", [{}])
+            
+            tableau_meta = tableau_findings[0].get("canonical_metadata")
+            pbi_meta = pbi_findings[0].get("canonical_metadata")
+            
+            if tableau_meta and pbi_meta:
+                print("\nRunning ComparisonAgent (Demo #2)...")
+                agent = ComparisonAgent(tableau_meta, pbi_meta)
+                report = agent.compare()
+                
+                # Persist Demo #2 output separately
+                repo_root = Path(__file__).resolve().parent.parent.parent
+                demo2_dir = repo_root / "artifacts" / "demo-02"
+                demo2_dir.mkdir(parents=True, exist_ok=True)
+                
+                report_path = demo2_dir / "comparison_report.json"
+                with open(report_path, "w", encoding="utf-8") as f:
+                    # Convert dataclass report to dict for JSON serialization
+                    def dataclass_to_dict(obj):
+                        if isinstance(obj, (list, tuple)):
+                            return [dataclass_to_dict(i) for i in obj]
+                        if isinstance(obj, dict):
+                            return {k: dataclass_to_dict(v) for k, v in obj.items()}
+                        if hasattr(obj, "__dataclass_fields__"):
+                            return {k: dataclass_to_dict(v) for k, v in asdict(obj).items()}
+                        if hasattr(obj, "value"): # Handle Enum
+                            return obj.value
+                        return obj
+                    
+                    json.dump(dataclass_to_dict(report), f, indent=2)
+                print(f"[Evidence] Demo #2 comparison report persisted to: {report_path}")
+            else:
+                print("\nWarning: Canonical metadata not found in findings; skipping ComparisonAgent.", file=sys.stderr)
+        else:
+            print("\nComparisonAgent skipped: Tableau or Power BI task failed.", file=sys.stderr)
+
     except Exception as e:
         print(f"Execution failed with exception: {e}", file=sys.stderr)
         import traceback
@@ -475,7 +537,7 @@ def run_demonstration(output_base_dir: Optional[Path] = None) -> int:
         "concurrency_proof": concurrency_proof
     }
     with open(run_dir / "execution.json", "w", encoding="utf-8") as f:
-        json.dump(execution_data, f, indent=2)
+        json.dump(execution_data, f, indent=2, default=json_enum_serializer)
 
     # tableau_result.json
     tableau_data = {
@@ -493,7 +555,7 @@ def run_demonstration(output_base_dir: Optional[Path] = None) -> int:
         "result_payload": pbi_res
     }
     with open(run_dir / "powerbi_result.json", "w", encoding="utf-8") as f:
-        json.dump(powerbi_data, f, indent=2)
+        json.dump(powerbi_data, f, indent=2, default=json_enum_serializer)
 
     # provenance.json
     provenance_data = {
@@ -502,11 +564,16 @@ def run_demonstration(output_base_dir: Optional[Path] = None) -> int:
         "provenance_valid": provenance_valid
     }
     with open(run_dir / "provenance.json", "w", encoding="utf-8") as f:
-        json.dump(provenance_data, f, indent=2)
+        json.dump(
+            provenance_data,
+            f,
+            indent=2,
+            default=json_enum_serializer,
+        )
 
     # synthesis.json
     with open(run_dir / "synthesis.json", "w", encoding="utf-8") as f:
-        json.dump(synthesis_result, f, indent=2)
+        json.dump(synthesis_result, f, indent=2, default=json_enum_serializer)
 
     # run_summary.md
     summary_md = f"""# BIOrch Demo #1 — Run Summary

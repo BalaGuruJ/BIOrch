@@ -28,8 +28,8 @@
         "required": ["state", "tableau_key", "powerbi_key"],
         "properties": {
           "state": {"enum": ["MATCHED", "TABLEAU_ONLY", "POWERBI_ONLY", "DIFFERENT"]},
-          "tableau_key": {"type": "string"},
-          "powerbi_key": {"type": "string"}
+          "tableau_key": {"type": ["string", "null"]},
+          "powerbi_key": {"type": ["string", "null"]}
         }
       }
     },
@@ -40,8 +40,8 @@
         "required": ["state", "tableau_key", "powerbi_key"],
         "properties": {
           "state": {"enum": ["MATCHED", "TABLEAU_ONLY", "POWERBI_ONLY", "DIFFERENT"]},
-          "tableau_key": {"type": "string"},
-          "powerbi_key": {"type": "string"}
+          "tableau_key": {"type": ["string", "null"]},
+          "powerbi_key": {"type": ["string", "null"]}
         }
       }
     },
@@ -52,8 +52,8 @@
         "required": ["state", "tableau_key", "powerbi_key"],
         "properties": {
           "state": {"enum": ["MATCHED", "TABLEAU_ONLY", "POWERBI_ONLY", "DIFFERENT"]},
-          "tableau_key": {"type": "string"},
-          "powerbi_key": {"type": "string"}
+          "tableau_key": {"type": ["string", "null"]},
+          "powerbi_key": {"type": ["string", "null"]}
         }
       }
     },

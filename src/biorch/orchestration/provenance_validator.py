@@ -1,6 +1,13 @@
 import hashlib
 import json
+from enum import Enum
 from typing import Dict, Any, List, Optional
+
+def _json_enum_serializer(obj: Any) -> Any:
+    """JSON default handler to serialize Enum types."""
+    if isinstance(obj, Enum):
+        return obj.value
+    raise TypeError(f"Object of type {obj.__class__.__name__} is not JSON serializable")
 
 class ProvenanceValidationError(ValueError):
     """Raised when provenance validation or audit integrity check fails."""
@@ -90,7 +97,7 @@ class ProvenanceValidator:
             "provenance": provenance
         }
         
-        serialized = json.dumps(canonical_payload, sort_keys=True, separators=(",", ":"))
+        serialized = json.dumps(canonical_payload, sort_keys=True, separators=(",", ":"), default=_json_enum_serializer)
         return hashlib.sha256(serialized.encode("utf-8")).hexdigest()
 
     def verify_audit_checksum(self, expected_checksum: str) -> bool:
